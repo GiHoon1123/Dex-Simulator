@@ -3,7 +3,7 @@ import { LpController } from './lp.controllers';
 import { LpService } from './lp.service';
 
 @Module({
-  imports: [],
+  imports: [], // Market 모듈 import 불필요
   controllers: [LpController],
   providers: [LpService],
   exports: [LpService], // 다른 모듈에서 사용할 수 있도록 export

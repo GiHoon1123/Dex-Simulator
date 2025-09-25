@@ -6,5 +6,6 @@ import { MarketService } from './market.service';
   imports: [],
   controllers: [MarketController],
   providers: [MarketService],
+  exports: [MarketService], // 다른 모듈에서 사용할 수 있도록 export
 })
 export class MarketModule {}

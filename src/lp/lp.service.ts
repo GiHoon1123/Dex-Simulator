@@ -2,21 +2,34 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { LpUser, Pool } from 'src/lp/types/lp.interface';
 import { TradeExecutedEvent } from '../common/events/trade.events';
+import { PriceChangeEvent } from './types/market.interface';
 
 @Injectable()
 export class LpService {
   private pool: Pool;
   private readonly TOKEN_GENERATION_RATE = 10; // 거래 1당 생성되는 토큰 수
-  private readonly FEE_RATE = 0.003; // 0.3% 수수료
+  private readonly BASE_FEE_RATE = 0.003; // 기본 수수료 0.3%
+  private readonly MIN_FEE_RATE = 0.0005; // 최소 수수료 0.05%
+  private readonly MAX_FEE_RATE = 0.01; // 최대 수수료 1%
+  private readonly VOLATILITY_MULTIPLIER = 2; // 변동성 배수 (변동성 1% → 수수료 2% 증가)
 
   constructor() {
     this.pool = {
       eth: 0,
       btc: 0,
       k: 0,
-      feeRate: this.FEE_RATE,
+      feeRate: this.BASE_FEE_RATE,
       userCount: 0,
       users: [],
+      initialPoolValue: 0,
+      currentPoolValue: 0,
+      poolSizeRatio: 1.0,
+      volatility: {
+        eth: 0,
+        btc: 0,
+        overall: 0,
+      },
+      lastVolatilityUpdate: new Date(),
     };
   }
 
@@ -72,13 +85,25 @@ export class LpService {
     // 초기 거버넌스 토큰 분배 (지분 비율 그대로)
     this.distributeInitialTokens(users);
 
+    // 초기 풀 가치 계산 (ETH 기준)
+    const initialPoolValue = totalEth + totalBtc * (totalEth / totalBtc);
+
     this.pool = {
       eth: totalEth,
       btc: totalBtc,
       k,
-      feeRate: this.FEE_RATE,
+      feeRate: this.BASE_FEE_RATE,
       userCount: users.length,
       users,
+      initialPoolValue,
+      currentPoolValue: initialPoolValue,
+      poolSizeRatio: 1.0,
+      volatility: {
+        eth: 0,
+        btc: 0,
+        overall: 0,
+      },
+      lastVolatilityUpdate: new Date(),
     };
     return this.pool;
   }
@@ -135,6 +160,9 @@ export class LpService {
     // 모든 유저의 지분 재계산
     this.recalculateShares();
 
+    // 동적 수수료 재계산 (풀 크기 변화 반영)
+    this.calculateDynamicFee();
+
     return this.pool;
   }
 
@@ -167,6 +195,9 @@ export class LpService {
 
     // 모든 유저의 지분 재계산
     this.recalculateShares();
+
+    // 동적 수수료 재계산 (풀 크기 변화 반영)
+    this.calculateDynamicFee();
 
     return this.pool;
   }
@@ -222,6 +253,9 @@ export class LpService {
 
     // 모든 유저의 지분 재계산
     this.recalculateShares();
+
+    // 동적 수수료 재계산 (풀 크기 변화 반영)
+    this.calculateDynamicFee();
   }
 
   // 수수료 분배
@@ -239,9 +273,42 @@ export class LpService {
     });
   }
 
-  // 수수료 계산
+  // 동적 수수료 계산 (풀 크기 기반)
+  calculateDynamicFee(): number {
+    this.validatePoolInitialized();
+
+    // 현재 풀 가치 계산 (ETH 기준)
+    const currentPoolValue =
+      this.pool.eth + this.pool.btc * (this.pool.eth / this.pool.btc);
+
+    // 풀 크기 비율 계산
+    const poolSizeRatio = currentPoolValue / this.pool.initialPoolValue;
+
+    // 풀 크기에 따른 수수료 조절 (제곱근 기반)
+    // 풀이 클수록 수수료 감소
+    const sizeMultiplier = Math.max(0.1, 1 / Math.sqrt(poolSizeRatio));
+
+    // 최종 수수료 계산
+    const dynamicFeeRate = this.BASE_FEE_RATE * sizeMultiplier;
+
+    // 최소/최대 수수료 범위 적용
+    const finalFeeRate = Math.max(
+      this.MIN_FEE_RATE,
+      Math.min(this.MAX_FEE_RATE, dynamicFeeRate),
+    );
+
+    // 풀 정보 업데이트
+    this.pool.currentPoolValue = currentPoolValue;
+    this.pool.poolSizeRatio = poolSizeRatio;
+    this.pool.feeRate = finalFeeRate;
+
+    return finalFeeRate;
+  }
+
+  // 수수료 계산 (거래량 기준)
   calculateFee(amountIn: number): number {
-    return amountIn * this.FEE_RATE;
+    const currentFeeRate = this.calculateDynamicFee();
+    return amountIn * currentFeeRate;
   }
 
   // 거래 시 거버넌스 토큰 분배
@@ -258,5 +325,60 @@ export class LpService {
       );
       user.governanceTokens += userTokens;
     });
+  }
+
+  // Market 가격 변동 이벤트 수신
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @OnEvent('market.price.changed')
+  handleMarketPriceChange(event: PriceChangeEvent): void {
+    console.log(
+      `시장 가격 변동 감지: ETH ${event.change.eth.toFixed(2)}%, BTC ${event.change.btc.toFixed(2)}%`,
+    );
+
+    // 변동성 정보 업데이트
+    this.pool.volatility = {
+      eth: Math.abs(event.change.eth),
+      btc: Math.abs(event.change.btc),
+      overall: event.volatility,
+    };
+    this.pool.lastVolatilityUpdate = new Date();
+
+    // 동적 수수료 재계산 (풀 크기 + 변동성)
+    this.calculateDynamicFeeWithVolatility();
+  }
+
+  // 변동성을 포함한 동적 수수료 계산
+  private calculateDynamicFeeWithVolatility(): void {
+    this.validatePoolInitialized();
+
+    // 1. 풀 크기 기반 수수료 계산
+    const currentPoolValue =
+      this.pool.eth + this.pool.btc * (this.pool.eth / this.pool.btc);
+    const poolSizeRatio = currentPoolValue / this.pool.initialPoolValue;
+    const sizeMultiplier = Math.max(0.1, 1 / Math.sqrt(poolSizeRatio));
+
+    // 2. 변동성 기반 수수료 계산
+    const volatilityMultiplier =
+      1 + (this.pool.volatility.overall / 100) * this.VOLATILITY_MULTIPLIER;
+
+    // 3. 복합 수수료 계산 (풀 크기 60%, 변동성 40%)
+    const combinedMultiplier =
+      sizeMultiplier * 0.6 + volatilityMultiplier * 0.4;
+    const dynamicFeeRate = this.BASE_FEE_RATE * combinedMultiplier;
+
+    // 4. 최소/최대 수수료 범위 적용
+    const finalFeeRate = Math.max(
+      this.MIN_FEE_RATE,
+      Math.min(this.MAX_FEE_RATE, dynamicFeeRate),
+    );
+
+    // 5. 풀 정보 업데이트
+    this.pool.currentPoolValue = currentPoolValue;
+    this.pool.poolSizeRatio = poolSizeRatio;
+    this.pool.feeRate = finalFeeRate;
+
+    console.log(
+      `동적 수수료 업데이트: ${(finalFeeRate * 100).toFixed(3)}% (풀크기: ${(sizeMultiplier * 100).toFixed(1)}%, 변동성: ${(volatilityMultiplier * 100).toFixed(1)}%)`,
+    );
   }
 }

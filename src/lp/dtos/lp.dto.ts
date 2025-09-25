@@ -33,7 +33,7 @@ export class PoolDto {
   @ApiProperty({ example: 30000000, description: '곱 불변식 k 값 (ETH * BTC)' })
   k: number;
 
-  @ApiProperty({ example: 0.003, description: '거래 수수료율 (0.3%)' })
+  @ApiProperty({ example: 0.003, description: '거래 수수료율 (동적 조절)' })
   feeRate: number;
 
   @ApiProperty({ example: 10, description: '풀에 참여한 유저 수' })
@@ -41,4 +41,29 @@ export class PoolDto {
 
   @ApiProperty({ type: [LpUserDto], description: '풀에 참여한 LP 유저 목록' })
   users: LpUserDto[];
+
+  @ApiProperty({ example: 2000, description: '초기 풀 가치 (ETH 기준)' })
+  initialPoolValue: number;
+
+  @ApiProperty({ example: 2000, description: '현재 풀 가치 (ETH 기준)' })
+  currentPoolValue: number;
+
+  @ApiProperty({ example: 1.0, description: '풀 크기 비율 (현재/초기)' })
+  poolSizeRatio: number;
+
+  @ApiProperty({
+    example: { eth: 2.5, btc: 1.8, overall: 2.1 },
+    description: '변동성 정보 (ETH, BTC, 전체)',
+  })
+  volatility: {
+    eth: number;
+    btc: number;
+    overall: number;
+  };
+
+  @ApiProperty({
+    example: '2025-09-25T05:33:35.991Z',
+    description: '마지막 변동성 업데이트 시간',
+  })
+  lastVolatilityUpdate: Date;
 }
