@@ -18,16 +18,19 @@ export class LpUserDto {
 
   @ApiProperty({ example: 0, description: '수수료로 받은 BTC (누적)' })
   earnedBtc: number;
+
+  @ApiProperty({ example: 150.5, description: '거버넌스 토큰 보유량' })
+  governanceTokens: number;
 }
 
 export class PoolDto {
-  @ApiProperty({ example: 10, description: '풀에 모인 ETH 총량 (고정)' })
+  @ApiProperty({ example: 1000, description: '풀에 모인 ETH 총량 (고정)' })
   eth: number;
 
-  @ApiProperty({ example: 300, description: '풀에 모인 BTC 총량 (고정)' })
+  @ApiProperty({ example: 30000, description: '풀에 모인 BTC 총량 (고정)' })
   btc: number;
 
-  @ApiProperty({ example: 3000, description: '곱 불변식 k 값 (ETH * BTC)' })
+  @ApiProperty({ example: 30000000, description: '곱 불변식 k 값 (ETH * BTC)' })
   k: number;
 
   @ApiProperty({ example: 10, description: '풀에 참여한 유저 수' })

@@ -6,6 +6,7 @@ export interface LpUser {
   share: number;
   earnedEth: number; // 수수료로 받은 ETH (누적)
   earnedBtc: number; // 수수료로 받은 BTC (누적)
+  governanceTokens: number; // 거버넌스 토큰 보유량
 }
 
 export interface Pool {

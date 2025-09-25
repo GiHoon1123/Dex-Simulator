@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { LpUser, Pool } from 'src/lp/types/lp.interface';
+import { TradeExecutedEvent } from '../common/events/trade.events';
 
 @Injectable()
 export class LpService {
   private pool: Pool;
+  private readonly TOKEN_GENERATION_RATE = 10; // 거래 1당 생성되는 토큰 수
+  private readonly FEE_RATE = 0.003; // 0.3% 수수료
 
   constructor() {
     this.pool = {
@@ -19,9 +23,9 @@ export class LpService {
   initLiquidity(): Pool {
     const users: LpUser[] = [];
 
-    // 고정된 초기 풀 비율 (ETH:BTC = 10:300)
-    const TARGET_ETH = 10;
-    const TARGET_BTC = 300;
+    // 고정된 초기 풀 비율 (ETH:BTC = 1000:30000)
+    const TARGET_ETH = 1000;
+    const TARGET_BTC = 30000;
 
     // 각 유저의 비율을 랜덤으로 생성 (합이 1이 되도록)
     const userRatios: number[] = [];
@@ -40,7 +44,15 @@ export class LpService {
       const eth = parseFloat((TARGET_ETH * ratio).toFixed(3));
       const btc = parseFloat((TARGET_BTC * ratio).toFixed(3));
 
-      users.push({ id: i, eth, btc, share: 0, earnedEth: 0, earnedBtc: 0 });
+      users.push({
+        id: i,
+        eth,
+        btc,
+        share: 0,
+        earnedEth: 0,
+        earnedBtc: 0,
+        governanceTokens: 0,
+      });
     }
 
     const totalEth = TARGET_ETH;
@@ -55,6 +67,9 @@ export class LpService {
       const totalValue = totalEth + totalBtc * (totalEth / totalBtc);
       u.share = parseFloat((value / totalValue).toFixed(3));
     });
+
+    // 초기 거버넌스 토큰 분배 (지분 비율 그대로)
+    this.distributeInitialTokens(users);
 
     this.pool = {
       eth: totalEth,
@@ -102,6 +117,7 @@ export class LpService {
         share: 0,
         earnedEth: 0,
         earnedBtc: 0,
+        governanceTokens: 0,
       };
 
       this.pool.users.push(newUser);
@@ -170,5 +186,75 @@ export class LpService {
         '풀이 초기화되지 않았습니다. 먼저 POST /lp/init을 호출해주세요.',
       );
     }
+  }
+
+  // 초기 거버넌스 토큰 분배 (지분 비율 그대로)
+  private distributeInitialTokens(users: LpUser[]): void {
+    users.forEach((user) => {
+      // 54% 지분이면 54개 토큰
+      user.governanceTokens = parseFloat((user.share * 100).toFixed(2));
+    });
+  }
+
+  // 거래 이벤트 리스너
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @OnEvent('trade.executed')
+  handleTradeExecuted(event: TradeExecutedEvent): void {
+    console.log(`거래 실행됨: ${event.tradeId}, 수수료: ${event.fee}`);
+
+    // 풀 상태 업데이트
+    this.updatePoolAfterTrade(event);
+
+    // 수수료 분배
+    this.distributeFees(event.fee, event.from);
+
+    // 거버넌스 토큰 분배
+    this.distributeTokensFromTrade(event.fee);
+  }
+
+  // 거래 후 풀 상태 업데이트
+  private updatePoolAfterTrade(event: TradeExecutedEvent): void {
+    this.pool.eth = event.poolAfter.eth;
+    this.pool.btc = event.poolAfter.btc;
+    this.pool.k = event.poolAfter.k;
+
+    // 모든 유저의 지분 재계산
+    this.recalculateShares();
+  }
+
+  // 수수료 분배
+  private distributeFees(fee: number, from: 'ETH' | 'BTC'): void {
+    this.pool.users.forEach((user) => {
+      const userFee = parseFloat((fee * user.share).toFixed(6));
+
+      if (from === 'ETH') {
+        // ETH로 수수료 지급
+        user.earnedEth += userFee;
+      } else {
+        // BTC로 수수료 지급
+        user.earnedBtc += userFee;
+      }
+    });
+  }
+
+  // 수수료 계산
+  calculateFee(amountIn: number): number {
+    return amountIn * this.FEE_RATE;
+  }
+
+  // 거래 시 거버넌스 토큰 분배
+  distributeTokensFromTrade(tradeFee: number): void {
+    this.validatePoolInitialized();
+
+    // 거래 수수료에 비례하여 토큰 생성
+    const tokensToDistribute = tradeFee * this.TOKEN_GENERATION_RATE;
+
+    // 유저별 지분 비율로 토큰 분배
+    this.pool.users.forEach((user) => {
+      const userTokens = parseFloat(
+        (tokensToDistribute * user.share).toFixed(2),
+      );
+      user.governanceTokens += userTokens;
+    });
   }
 }
