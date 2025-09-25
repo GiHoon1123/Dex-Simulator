@@ -35,6 +35,10 @@ npm run test:cov
 
 - http://localhost:3000/api
 
+## 비즈니스 프로세스
+
+![DEX Simulator Business Process](asset/process.png)
+
 ## 주요 기능
 
 ### 1. Market Module (시장 모듈)
