@@ -47,3 +47,4 @@ describe('LpModule', () => {
     expect(lpController['lpService']).toBe(lpService);
   });
 });
+

@@ -52,3 +52,4 @@ describe('MarketModule', () => {
     expect(marketService['eventEmitter']).toBeDefined();
   });
 });
+

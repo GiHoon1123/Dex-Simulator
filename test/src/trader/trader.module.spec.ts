@@ -74,3 +74,4 @@ describe('TraderModule', () => {
     expect(traderService['eventEmitter']).toBeDefined();
   });
 });
+
