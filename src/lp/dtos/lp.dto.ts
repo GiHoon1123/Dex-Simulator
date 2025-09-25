@@ -33,6 +33,9 @@ export class PoolDto {
   @ApiProperty({ example: 30000000, description: '곱 불변식 k 값 (ETH * BTC)' })
   k: number;
 
+  @ApiProperty({ example: 0.003, description: '거래 수수료율 (0.3%)' })
+  feeRate: number;
+
   @ApiProperty({ example: 10, description: '풀에 참여한 유저 수' })
   userCount: number;
 

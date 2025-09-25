@@ -44,22 +44,31 @@ export class TraderService {
       k: currentPool.k,
     };
 
-    // AMM 계산
-    const { amountIn, amountOut, slippage, priceImpact } = this.calculateAMM(
-      from,
-      to,
-      tradeRatio,
-      poolBefore,
-    );
+    // 거래량 계산
+    const amountIn =
+      from === 'ETH'
+        ? poolBefore.eth * tradeRatio
+        : poolBefore.btc * tradeRatio;
 
     // 수수료 계산 (LP 서비스에서)
     const fee = this.lpService.calculateFee(amountIn);
+
+    // 수수료를 제외한 실제 거래량
+    const actualAmountIn = amountIn - fee;
+
+    // AMM 계산 (수수료 제외한 금액으로)
+    const { amountOut, slippage, priceImpact } = this.calculateAMM(
+      from,
+      to,
+      actualAmountIn,
+      poolBefore,
+    );
 
     // 거래 후 풀 상태 계산
     const poolAfter = this.calculatePoolAfter(
       from,
       to,
-      amountIn,
+      actualAmountIn,
       amountOut,
       poolBefore,
     );
@@ -117,35 +126,31 @@ export class TraderService {
   private calculateAMM(
     from: 'ETH' | 'BTC',
     to: 'ETH' | 'BTC',
-    tradeRatio: number,
+    actualAmountIn: number,
     pool: { eth: number; btc: number; k: number },
   ) {
-    let amountIn: number;
     let amountOut: number;
 
     if (from === 'ETH' && to === 'BTC') {
-      amountIn = pool.eth * tradeRatio;
       // x*y = k 공식: (x + Δx) * (y - Δy) = k
       // Δy = (k / (x + Δx)) - y
-      amountOut = pool.btc - pool.k / (pool.eth + amountIn);
+      amountOut = pool.btc - pool.k / (pool.eth + actualAmountIn);
     } else {
-      amountIn = pool.btc * tradeRatio;
-      amountOut = pool.eth - pool.k / (pool.btc + amountIn);
+      amountOut = pool.eth - pool.k / (pool.btc + actualAmountIn);
     }
 
     // 슬리피지 계산
     const expectedPrice =
       from === 'ETH' ? pool.btc / pool.eth : pool.eth / pool.btc;
-    const actualPrice = amountOut / amountIn;
+    const actualPrice = amountOut / actualAmountIn;
     const slippage =
       Math.abs((actualPrice - expectedPrice) / expectedPrice) * 100;
 
     // 가격 영향도 계산
     const priceImpact =
-      (amountIn / (from === 'ETH' ? pool.eth : pool.btc)) * 100;
+      (actualAmountIn / (from === 'ETH' ? pool.eth : pool.btc)) * 100;
 
     return {
-      amountIn: parseFloat(amountIn.toFixed(6)),
       amountOut: parseFloat(amountOut.toFixed(6)),
       slippage: parseFloat(slippage.toFixed(4)),
       priceImpact: parseFloat(priceImpact.toFixed(4)),

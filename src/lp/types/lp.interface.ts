@@ -13,6 +13,7 @@ export interface Pool {
   eth: number;
   btc: number;
   k: number;
+  feeRate: number; // 거래 수수료율 (0.3%)
   userCount: number; // 전체 유저 수
   users: LpUser[];
 }

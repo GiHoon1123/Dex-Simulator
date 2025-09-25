@@ -14,6 +14,7 @@ export class LpService {
       eth: 0,
       btc: 0,
       k: 0,
+      feeRate: this.FEE_RATE,
       userCount: 0,
       users: [],
     };
@@ -75,6 +76,7 @@ export class LpService {
       eth: totalEth,
       btc: totalBtc,
       k,
+      feeRate: this.FEE_RATE,
       userCount: users.length,
       users,
     };
