@@ -1,98 +1,84 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# DEX Simulator
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+DEX 풀, LP, 트레이더 시뮬레이션을 위한 NestJS 기반 API 서버입니다.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 기술 스택
 
-## Description
+- **Node.js**: 18.x 이상
+- **NestJS**: 11.0.1
+- **TypeScript**: 5.7.3
+- **Jest**: 29.7.0 (테스트)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 설치 및 실행
 
-## Project setup
+### 의존성 설치
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+### 서버 실행
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run start:dev
 ```
 
-## Run tests
+### 테스트 실행
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run test:cov
 ```
 
-## Deployment
+## API 문서
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+서버 실행 후 다음 URL에서 Swagger API 문서를 확인할 수 있습니다:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- http://localhost:3000/api
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## 주요 기능
+
+### 1. Market Module (시장 모듈)
+
+- **가격 시뮬레이션**: ETH/BTC 가격 변동 시뮬레이션
+- **변동성 계산**: 표준편차 기반 변동성 계산
+- **아비트라지 기회 탐지**: 풀과 시장 가격 차이 기반 아비트라지 기회 계산
+- **시장 상태 조회**: 현재 가격, 변동성, 아비트라지 기회 정보 제공
+
+### 2. LP Module (유동성 공급자 모듈)
+
+- **풀 생성**: ETH/BTC 유동성 풀 생성 및 관리
+- **유동성 공급**: LP 토큰 발행 및 유동성 추가
+- **유동성 제거**: LP 토큰 소각 및 유동성 회수
+- **수수료 계산**: 거래 수수료 및 LP 수익 계산
+- **풀 상태 조회**: 풀 정보, 유동성, 수수료 현황 조회
+
+### 3. Trader Module (트레이더 모듈)
+
+- **랜덤 거래**: ETH ↔ BTC 랜덤 거래 실행
+- **아비트라지 거래**: 가격 차이를 이용한 수익 거래
+
+## 프로젝트 구조
+
+```
+src/
+├── common/           # 공통 모듈
+│   ├── events/       # 이벤트 정의
+│   └── filters/      # 예외 필터
+├── lp/              # 유동성 공급자 모듈
+├── market/          # 시장 모듈
+├── trader/          # 트레이더 모듈
+└── main.ts          # 애플리케이션 진입점
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 이벤트 시스템
 
-## Resources
+- **market.price.changed**: 가격 변동 이벤트
+- **arbitrage.opportunity**: 아비트라지 기회 발견 이벤트
+- **trade.executed**: 거래 실행 이벤트
 
-Check out a few resources that may come in handy when working with NestJS:
+## 테스트 커버리지
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+현재 프로젝트의 테스트 커버리지:
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- **market.service.ts**: 100% 커버리지 달성
+- 전체 프로젝트 테스트 구조 개선 및 TypeScript 기반 설정
