@@ -87,8 +87,6 @@ export class MarketService {
       returns.push(avgReturn);
     }
 
-    if (returns.length === 0) return 0;
-
     // 표준편차 계산
     const mean = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
     const variance =
@@ -175,8 +173,6 @@ export class MarketService {
       returns.push(returnRate);
     }
 
-    if (returns.length === 0) return 0;
-
     const mean = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
     const variance =
       returns.reduce((sum, ret) => sum + Math.pow(ret - mean, 2), 0) /
@@ -199,8 +195,6 @@ export class MarketService {
         recentPrices[i - 1].btc;
       returns.push(returnRate);
     }
-
-    if (returns.length === 0) return 0;
 
     const mean = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
     const variance =
