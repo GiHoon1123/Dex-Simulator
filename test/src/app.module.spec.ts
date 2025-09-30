@@ -37,5 +37,3 @@ describe('AppModule', () => {
     await expect(module.init()).resolves.not.toThrow();
   });
 });
-
-

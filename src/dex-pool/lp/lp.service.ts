@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TradeExecutedEvent } from '../../common/events/trade.events';
+import { TradeExecutedEvent } from '../events/trade.events';
 import { LpUser, Pool } from './types/lp.interface';
 import { PriceChangeEvent } from './types/market.interface';
 
