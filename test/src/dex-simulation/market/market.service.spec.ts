@@ -1,6 +1,6 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MarketService } from 'src/dex-pool/market/market.service';
+import { MarketService } from 'src/dex-simulation/market/market.service';
 
 describe('MarketService', () => {
   let service: MarketService;

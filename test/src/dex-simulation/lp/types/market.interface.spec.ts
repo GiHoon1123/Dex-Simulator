@@ -1,12 +1,12 @@
 import {
   MarketPrice,
   PriceChangeEvent,
-} from 'src/dex-pool/lp/types/market.interface';
+} from 'src/dex-simulation/lp/types/market.interface';
 import {
   ArbitrageOpportunity,
   MarketStatus,
   VolatilityMetrics,
-} from 'src/dex-pool/market/types/market.interface';
+} from 'src/dex-simulation/market/types/market.interface';
 
 describe('MarketPrice Interface', () => {
   it('MarketPrice 인터페이스가 올바르게 정의되어야 합니다', () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TraderController } from 'src/dex-pool/trader/trader.controllers';
-import { TraderService } from 'src/dex-pool/trader/trader.service';
-import { TradeResult } from 'src/dex-pool/trader/types/trade.interface';
+import { TraderController } from 'src/dex-simulation/trader/trader.controllers';
+import { TraderService } from 'src/dex-simulation/trader/trader.service';
+import { TradeResult } from 'src/dex-simulation/trader/types/trade.interface';
 
 describe('TraderController', () => {
   let controller: TraderController;

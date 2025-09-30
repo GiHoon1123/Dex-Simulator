@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { MarketController } from 'src/dex-pool/market/market.controllers';
-import { MarketService } from 'src/dex-pool/market/market.service';
+import { MarketController } from 'src/dex-simulation/market/market.controllers';
+import { MarketService } from 'src/dex-simulation/market/market.service';
 import {
   MarketPrice,
   MarketStatus,
   PriceChangeEvent,
-} from 'src/dex-pool/market/types/market.interface';
+} from 'src/dex-simulation/market/types/market.interface';
 
 describe('MarketController', () => {
   let controller: MarketController;

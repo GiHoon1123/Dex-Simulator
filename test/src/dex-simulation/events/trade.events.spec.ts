@@ -1,4 +1,4 @@
-import { TradeExecutedEvent } from 'src/dex-pool/events/trade.events';
+import { TradeExecutedEvent } from 'src/dex-simulation/events/trade.events';
 
 describe('TradeExecutedEvent Interface', () => {
   it('TradeExecutedEvent 인터페이스가 올바르게 정의되어야 합니다', () => {

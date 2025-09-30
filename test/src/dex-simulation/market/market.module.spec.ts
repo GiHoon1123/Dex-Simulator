@@ -1,8 +1,8 @@
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MarketController } from 'src/dex-pool/market/market.controllers';
-import { MarketModule } from 'src/dex-pool/market/market.module';
-import { MarketService } from 'src/dex-pool/market/market.service';
+import { MarketController } from 'src/dex-simulation/market/market.controllers';
+import { MarketModule } from 'src/dex-simulation/market/market.module';
+import { MarketService } from 'src/dex-simulation/market/market.service';
 
 describe('MarketModule', () => {
   let module: TestingModule;
