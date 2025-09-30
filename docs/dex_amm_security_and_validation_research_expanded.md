@@ -776,11 +776,11 @@ contract TestInvariants is Testable {
 - **[CoinMarketCap](https://coinmarketcap.com/)**: 암호화폐 시장 캡 및 통계
 - **[Etherscan](https://etherscan.io/)**: 이더리움 블록 익스플로러
 
-## 개인 학습 프로젝트
+## (참고)개인 학습 프로젝트
 
 ### DEX 이해를 위한 시뮬레이터
 
-- **[DEX Simulator (TypeScript)](https://github.com/GiHoon1123/Dex-Simulator)**: DEX 개념 이해를 위해 직접 개발한 NestJS 기반 시뮬레이터
+- **[DEX Simulator (TypeScript)](https://github.com/GiHoon1123/Dex-Simulator)**: 학회 챌린지 과제 진행 중 DEX 거래소 이해를 위해 직접 개발한 NestJS 기반 시뮬레이터 입니다.
   - **개발 목적**: DEX/AMM의 동작 원리를 실제 코드로 구현하여 이해하기 위함
   - **주요 기능**:
     - AMM 풀, LP, 트레이더 시뮬레이션
