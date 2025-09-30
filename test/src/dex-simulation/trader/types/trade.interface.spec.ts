@@ -1,7 +1,7 @@
 import {
   Trade,
   TradeResult,
-} from 'src/dex-pool/trader/types/trade.interface';
+} from 'src/dex-simulation/trader/types/trade.interface';
 
 describe('Trade Interface', () => {
   it('Trade 인터페이스가 올바르게 정의되어야 합니다', () => {

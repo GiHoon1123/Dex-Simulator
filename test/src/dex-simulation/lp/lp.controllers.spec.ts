@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LpController } from 'src/dex-pool/lp/lp.controllers';
-import { LpService } from 'src/dex-pool/lp/lp.service';
-import { Pool } from 'src/dex-pool/lp/types/lp.interface';
+import { LpController } from 'src/dex-simulation/lp/lp.controllers';
+import { LpService } from 'src/dex-simulation/lp/lp.service';
+import { Pool } from 'src/dex-simulation/lp/types/lp.interface';
 
 describe('LpController', () => {
   let controller: LpController;

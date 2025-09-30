@@ -7,4 +7,4 @@ import { TraderModule } from './trader/trader.module';
   imports: [LpModule, MarketModule, TraderModule],
   exports: [LpModule, MarketModule, TraderModule],
 })
-export class DexPoolModule {}
+export class DexSimulationModule {}

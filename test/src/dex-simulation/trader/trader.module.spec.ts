@@ -1,10 +1,10 @@
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LpService } from 'src/dex-pool/lp/lp.service';
-import { MarketService } from 'src/dex-pool/market/market.service';
-import { TraderController } from 'src/dex-pool/trader/trader.controllers';
-import { TraderModule } from 'src/dex-pool/trader/trader.module';
-import { TraderService } from 'src/dex-pool/trader/trader.service';
+import { LpService } from 'src/dex-simulation/lp/lp.service';
+import { MarketService } from 'src/dex-simulation/market/market.service';
+import { TraderController } from 'src/dex-simulation/trader/trader.controllers';
+import { TraderModule } from 'src/dex-simulation/trader/trader.module';
+import { TraderService } from 'src/dex-simulation/trader/trader.service';
 
 describe('TraderModule', () => {
   let module: TestingModule;

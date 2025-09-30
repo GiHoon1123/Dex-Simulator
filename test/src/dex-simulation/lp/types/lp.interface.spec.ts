@@ -1,4 +1,4 @@
-import { LpUser, Pool } from 'src/dex-pool/lp/types/lp.interface';
+import { LpUser, Pool } from 'src/dex-simulation/lp/types/lp.interface';
 
 describe('LpUser Interface', () => {
   it('LpUser 인터페이스가 올바르게 정의되어야 합니다', () => {

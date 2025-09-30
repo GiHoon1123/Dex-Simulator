@@ -1,8 +1,8 @@
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LpController } from 'src/dex-pool/lp/lp.controllers';
-import { LpModule } from 'src/dex-pool/lp/lp.module';
-import { LpService } from 'src/dex-pool/lp/lp.service';
+import { LpController } from 'src/dex-simulation/lp/lp.controllers';
+import { LpModule } from 'src/dex-simulation/lp/lp.module';
+import { LpService } from 'src/dex-simulation/lp/lp.service';
 
 describe('LpModule', () => {
   let module: TestingModule;
