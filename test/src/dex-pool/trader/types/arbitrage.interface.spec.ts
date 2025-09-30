@@ -1,4 +1,4 @@
-import { ArbitrageOpportunity } from '../../../../src/trader/types/arbitrage.interface';
+import { ArbitrageOpportunity } from 'src/dex-pool/trader/types/arbitrage.interface';
 
 describe('ArbitrageOpportunity Interface', () => {
   it('ArbitrageOpportunity 인터페이스가 올바르게 정의되어야 합니다', () => {

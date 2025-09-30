@@ -1,11 +1,11 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LpService } from '../../../src/lp/lp.service';
-import { Pool } from '../../../src/lp/types/lp.interface';
-import { MarketService } from '../../../src/market/market.service';
-import { MarketPrice } from '../../../src/market/types/market.interface';
-import { TraderService } from '../../../src/trader/trader.service';
-import { ArbitrageOpportunity } from '../../../src/trader/types/arbitrage.interface';
+import { LpService } from 'src/dex-pool/lp/lp.service';
+import { Pool } from 'src/dex-pool/lp/types/lp.interface';
+import { MarketService } from 'src/dex-pool/market/market.service';
+import { MarketPrice } from 'src/dex-pool/market/types/market.interface';
+import { TraderService } from 'src/dex-pool/trader/trader.service';
+import { ArbitrageOpportunity } from 'src/dex-pool/trader/types/arbitrage.interface';
 
 describe('TraderService', () => {
   let service: TraderService;

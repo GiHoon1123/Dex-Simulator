@@ -1,8 +1,8 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TradeExecutedEvent } from '../../../src/common/events/trade.events';
-import { LpService } from '../../../src/lp/lp.service';
-import { PriceChangeEvent } from '../../../src/lp/types/market.interface';
+import { TradeExecutedEvent } from 'src/common/events/trade.events';
+import { LpService } from 'src/dex-pool/lp/lp.service';
+import { PriceChangeEvent } from 'src/dex-pool/lp/types/market.interface';
 
 describe('LpService', () => {
   let service: LpService;
