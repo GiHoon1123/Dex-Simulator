@@ -39,7 +39,7 @@ export class BlockService {
   // 블록 생성 모드
   private autoProduction = false;
   private autoProductionInterval: NodeJS.Timeout | null = null;
-  private readonly AUTO_BLOCK_INTERVAL = 5000; // 5초
+  private readonly AUTO_BLOCK_INTERVAL = 12000; // 12초 (이더리움과 동일)
 
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
