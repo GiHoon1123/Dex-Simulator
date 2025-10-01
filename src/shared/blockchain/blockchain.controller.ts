@@ -22,6 +22,7 @@ import {
   SubmitTransactionDto,
 } from './dtos/blockchain.dto';
 import { GasService } from './gas.service';
+import { TransactionGeneratorService } from './transaction-generator.service';
 import { TransactionPoolService } from './transaction-pool.service';
 import {
   Transaction,
@@ -42,6 +43,7 @@ export class BlockchainController {
     private readonly blockService: BlockService,
     private readonly transactionPoolService: TransactionPoolService,
     private readonly gasService: GasService,
+    private readonly transactionGeneratorService: TransactionGeneratorService,
   ) {}
 
   // ========================================
@@ -433,6 +435,80 @@ export class BlockchainController {
   }
 
   // ========================================
+  // 트랜잭션 생성기
+  // ========================================
+
+  @Post('tx-generator/start')
+  @ApiOperation({
+    summary: '트랜잭션 자동 생성 시작',
+    description:
+      '3~10초 간격으로 랜덤 트랜잭션을 자동 생성하여 풀에 제출합니다. MEV 시뮬레이션을 위한 사용자 거래를 시뮬레이션합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '트랜잭션 자동 생성 시작',
+  })
+  startTransactionGenerator() {
+    this.transactionGeneratorService.startGenerating();
+
+    return {
+      message: '트랜잭션 자동 생성이 시작되었습니다',
+      interval: '3~10초 (랜덤)',
+      isActive: true,
+    };
+  }
+
+  @Post('tx-generator/stop')
+  @ApiOperation({
+    summary: '트랜잭션 자동 생성 중지',
+    description: '트랜잭션 자동 생성을 중지합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '트랜잭션 자동 생성 중지',
+  })
+  stopTransactionGenerator() {
+    this.transactionGeneratorService.stopGenerating();
+
+    return {
+      message: '트랜잭션 자동 생성이 중지되었습니다',
+      isActive: false,
+    };
+  }
+
+  @Get('tx-generator/status')
+  @ApiOperation({
+    summary: '트랜잭션 생성기 상태 조회',
+    description: '트랜잭션 자동 생성기의 상태와 통계를 조회합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '생성기 상태 및 통계',
+  })
+  getTransactionGeneratorStatus() {
+    return this.transactionGeneratorService.getStats();
+  }
+
+  @Post('tx-generator/generate-one')
+  @ApiOperation({
+    summary: '랜덤 트랜잭션 1개 생성',
+    description: '랜덤 트랜잭션을 즉시 1개 생성하여 풀에 제출합니다.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: '트랜잭션 생성 완료',
+  })
+  generateOneTransaction() {
+    const transaction =
+      this.transactionGeneratorService.generateRandomTransaction();
+
+    return {
+      message: '트랜잭션이 생성되었습니다',
+      transaction,
+    };
+  }
+
+  // ========================================
   // 통계
   // ========================================
 
@@ -449,6 +525,7 @@ export class BlockchainController {
     const blockchainStatus = this.blockService.getBlockchainStatus();
     const poolStatus = this.transactionPoolService.getPoolStatus();
     const currentGasPrice = this.gasService.getCurrentGasPrice();
+    const generatorStats = this.transactionGeneratorService.getStats();
 
     return {
       blockchain: blockchainStatus,
@@ -461,6 +538,7 @@ export class BlockchainController {
         isActive: this.blockService.isAutoProduction(),
         interval: 12000,
       },
+      txGenerator: generatorStats,
     };
   }
 }
