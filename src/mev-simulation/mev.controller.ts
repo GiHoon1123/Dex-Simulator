@@ -1,16 +1,16 @@
 import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { MevPrerequisitesGuard } from '../shared/guards/mev-prerequisites.guard';
+import { BlockchainPrerequisitesGuard } from '../shared/guards/blockchain-prerequisites.guard';
 
 /**
  * MevController
  *
  * MEV 시뮬레이션 API를 제공합니다.
- * 모든 API는 MevPrerequisitesGuard를 통해 전제조건을 확인합니다.
+ * 모든 API는 BlockchainPrerequisitesGuard를 통해 전제조건을 확인합니다.
  */
 @ApiTags('MEV Simulation')
 @Controller('mev')
-@UseGuards(MevPrerequisitesGuard)
+@UseGuards(BlockchainPrerequisitesGuard)
 export class MevController {
   constructor() {}
 

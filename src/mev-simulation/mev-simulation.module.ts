@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MevController } from './mev.controller';
-import { MevPrerequisitesGuard } from '../shared/guards/mev-prerequisites.guard';
+import { BlockchainPrerequisitesGuard } from '../shared/guards/blockchain-prerequisites.guard';
 
 /**
  * MevSimulationModule
@@ -13,7 +13,7 @@ import { MevPrerequisitesGuard } from '../shared/guards/mev-prerequisites.guard'
  */
 @Module({
   controllers: [MevController],
-  providers: [MevPrerequisitesGuard],
-  exports: [MevPrerequisitesGuard],
+  providers: [BlockchainPrerequisitesGuard],
+  exports: [BlockchainPrerequisitesGuard],
 })
 export class MevSimulationModule {}
