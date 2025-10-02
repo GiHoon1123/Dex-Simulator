@@ -1,6 +1,6 @@
 import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { BlockchainPrerequisitesGuard } from '../shared/guards/blockchain-prerequisites.guard';
+import { BlockchainPrerequisitesGuard } from '../common/guards/blockchain-prerequisites.guard';
 
 /**
  * MevController

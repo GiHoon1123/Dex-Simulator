@@ -4,8 +4,8 @@ import {
   ExecutionContext,
   Injectable,
 } from '@nestjs/common';
-import { BlockService } from '../blockchain/block.service';
-import { TransactionGeneratorService } from '../blockchain/transaction-generator.service';
+import { BlockService } from '../../shared/blockchain/block.service';
+import { TransactionGeneratorService } from '../../shared/blockchain/transaction-generator.service';
 
 /**
  * BlockchainPrerequisitesGuard

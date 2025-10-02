@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MevController } from './mev.controller';
-import { BlockchainPrerequisitesGuard } from '../shared/guards/blockchain-prerequisites.guard';
+import { BlockchainPrerequisitesGuard } from '../common/guards/blockchain-prerequisites.guard';
 
 /**
  * MevSimulationModule
