@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DexSimulationModule } from './dex-simulation/dex-simulation.module';
+import { MevSimulationModule } from './mev-simulation/mev-simulation.module';
 import { BlockchainModule } from './shared/blockchain/blockchain.module';
 
 async function bootstrap() {
