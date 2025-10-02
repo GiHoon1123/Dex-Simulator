@@ -43,10 +43,6 @@ npm run test:cov
 - **http://localhost:3000/api/blockchain** - 블록체인 시뮬레이션 API (트랜잭션 풀, 블록 생성, 가스 시스템)
 - **http://localhost:3000/api/mev** - MEV 시뮬레이션 API (Front-run, Back-run, Sandwich Attack)
 
-## 비즈니스 프로세스
-
-![DEX Simulator Business Process](asset/process.png)
-
 ## 주요 기능
 
 ### 1. DEX 시뮬레이션 (DEX Simulation)
