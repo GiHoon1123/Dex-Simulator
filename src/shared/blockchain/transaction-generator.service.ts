@@ -11,7 +11,7 @@ import {
  * TransactionGeneratorService
  *
  * 랜덤 트랜잭션을 자동으로 생성하여 트랜잭션 풀에 제출합니다.
- * MEV 시뮬레이션을 위한 일반 사용자 거래를 시뮬레이션합니다.
+ * MEV 시뮬레이션에 적합한 다양한 크기와 가스 가격의 트랜잭션을 생성합니다.
  */
 @Injectable()
 export class TransactionGeneratorService {
@@ -23,9 +23,9 @@ export class TransactionGeneratorService {
   private transactionCounter = 0;
   private userCounter = 0;
 
-  // 설정
-  private readonly MIN_INTERVAL = 3000; // 최소 3초
-  private readonly MAX_INTERVAL = 10000; // 최대 10초
+  // 설정 (MEV 시뮬레이션에 최적화된 기본값)
+  private readonly MIN_INTERVAL = 12000; // 최소 12초
+  private readonly MAX_INTERVAL = 12000; // 최대 12초
 
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
@@ -35,7 +35,7 @@ export class TransactionGeneratorService {
   /**
    * 자동 트랜잭션 생성 시작
    *
-   * 3~10초 간격으로 랜덤 트랜잭션을 생성하여 풀에 제출합니다.
+   * 12초 간격으로 랜덤 트랜잭션을 생성하여 풀에 제출합니다.
    */
   startGenerating(): void {
     if (this.isGenerating) {
@@ -46,7 +46,7 @@ export class TransactionGeneratorService {
     this.isGenerating = true;
     this.scheduleNextTransaction();
 
-    console.log('트랜잭션 자동 생성 시작 (3~10초 랜덤 간격)');
+    console.log('트랜잭션 자동 생성 시작 (12초 간격)');
   }
 
   /**
@@ -170,7 +170,7 @@ export class TransactionGeneratorService {
   }
 
   /**
-   * 랜덤 간격 생성 (3~10초)
+   * 랜덤 간격 생성
    *
    * @returns 밀리초 단위 간격
    */
@@ -206,23 +206,26 @@ export class TransactionGeneratorService {
   /**
    * 거래 크기 선택
    *
-   * MEV 공격 기회를 만들기 위해 다양한 크기의 거래를 생성합니다.
-   * 큰 거래일수록 MEV 타겟이 됩니다.
+   * MEV 시뮬레이션에 적합한 다양한 크기의 거래를 생성합니다.
+   * 다양한 크기의 거래로 MEV 기회를 제공합니다.
    *
    * @returns ETH 기준 거래 크기
    */
   private selectTransactionSize(): number {
     const rand = Math.random();
 
-    if (rand < 0.7) {
-      // 70% 소액 (1~5 ETH) - MEV 가치 없음
+    if (rand < 0.3) {
+      // 30% 소액 (1~5 ETH) - 일반 거래
       return 1 + Math.random() * 4;
-    } else if (rand < 0.9) {
-      // 20% 중액 (5~20 ETH) - MEV 가능
+    } else if (rand < 0.6) {
+      // 30% 중액 (5~20 ETH) - 샌드위치 가능
       return 5 + Math.random() * 15;
-    } else {
-      // 10% 대액 (20~50 ETH) - MEV 주요 타겟!
+    } else if (rand < 0.85) {
+      // 25% 대액 (20~50 ETH) - 프론트런 가능
       return 20 + Math.random() * 30;
+    } else {
+      // 15% 초대액 (50~100 ETH) - MEV 주요 타겟!
+      return 50 + Math.random() * 50;
     }
   }
 
