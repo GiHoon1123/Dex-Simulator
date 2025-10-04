@@ -3,6 +3,7 @@ import { BlockService } from './block.service';
 import { BlockchainController } from './blockchain.controller';
 import { GasService } from './gas.service';
 import { TransactionGeneratorService } from './transaction-generator.service';
+import { TransactionParserService } from './transaction-parser.service';
 import { TransactionPoolService } from './transaction-pool.service';
 
 /**
@@ -21,12 +22,14 @@ import { TransactionPoolService } from './transaction-pool.service';
     BlockService,
     GasService,
     TransactionGeneratorService,
+    TransactionParserService,
   ],
   exports: [
     TransactionPoolService,
     BlockService,
     GasService,
     TransactionGeneratorService,
+    TransactionParserService,
   ],
 })
 export class BlockchainModule {}

@@ -23,22 +23,27 @@ export class SubmitTransactionDto {
 
   @ApiProperty({
     description: '수신자 주소 (컨트랙트 또는 EOA)',
-    example: 'dex-contract',
+    example: '0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8',
   })
   @IsString()
   to: string;
 
-  @ApiProperty({
-    description: '트랜잭션 데이터',
-    example: {
-      swap: {
-        from: 'ETH',
-        to: 'BTC',
-        amountIn: 10,
-      },
-    },
+  @ApiPropertyOptional({
+    description: 'ETH 전송량 (wei 단위)',
+    example: '0',
+    default: '0',
   })
-  data: any;
+  @IsOptional()
+  @IsString()
+  value?: string;
+
+  @ApiProperty({
+    description: '트랜잭션 데이터 (hex 문자열)',
+    example:
+      '0x128acb080000000000000000000000000000000000000000000000000000000000000000',
+  })
+  @IsString()
+  data: string;
 
   @ApiPropertyOptional({
     description: '가스 가격 (높을수록 우선순위 높음)',
