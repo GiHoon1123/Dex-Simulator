@@ -33,28 +33,30 @@ export enum TransactionStatus {
 /**
  * 트랜잭션 인터페이스
  *
- * 블록체인 트랜잭션의 모든 정보를 포함합니다.
+ * 실제 이더리움 트랜잭션 구조를 기반으로 합니다.
+ * MEV 시뮬레이션을 위해 가스 가격 기반 우선순위를 지원합니다.
  */
 export interface Transaction {
   // 기본 정보
   id: string;
   type: TransactionType;
 
-  // 발신자/수신자
+  // 발신자/수신자 (실제 이더리움 구조)
   from: string;
-  to: string;
+  to: string; // 풀 컨트랙트 주소
+  value: string; // ETH 전송량 (wei 단위)
 
-  // 트랜잭션 데이터
-  data: TransactionData;
+  // 트랜잭션 데이터 (실제 이더리움 구조)
+  data: string; // 함수 호출 데이터 (hex)
 
   // 가스 관련 (MEV 우선순위 결정에 핵심)
-  gasPrice: number;
-  gasLimit: number;
-  gasUsed?: number;
+  gasPrice: number; // 가스 가격 (gwei)
+  gasLimit: number; // 가스 한도
+  gasUsed?: number; // 실제 사용된 가스
 
   // 상태 및 순서
   status: TransactionStatus;
-  nonce: number;
+  nonce: number; // 트랜잭션 순서
 
   // 시간 정보
   timestamp: Date;
@@ -64,12 +66,36 @@ export interface Transaction {
   // 실행 결과
   result?: TransactionResult;
   error?: string;
+
+  // 파싱된 데이터 (MEV 봇이 사용)
+  parsedData?: ParsedTransactionData;
 }
 
 /**
- * 트랜잭션 데이터
+ * 파싱된 트랜잭션 데이터
  *
- * 각 트랜잭션 타입별 데이터를 포함합니다.
+ * ABI를 통해 파싱된 함수 호출 정보를 포함합니다.
+ * MEV 봇이 트랜잭션을 분석할 때 사용합니다.
+ */
+export interface ParsedTransactionData {
+  // 호출된 함수명
+  function: string;
+
+  // 함수 파라미터
+  params: {
+    recipient?: string; // 수신자 주소
+    zeroForOne?: boolean; // 토큰0→토큰1 방향
+    amountSpecified?: string; // 거래량
+    sqrtPriceLimitX96?: string; // 가격 한도
+    data?: string; // 추가 데이터
+  };
+}
+
+/**
+ * 트랜잭션 데이터 (레거시 - 하위 호환성용)
+ *
+ * 기존 코드와의 호환성을 위해 유지됩니다.
+ * 새로운 코드에서는 parsedData를 사용해야 합니다.
  */
 export interface TransactionData {
   // 스왑 거래 데이터
@@ -112,11 +138,25 @@ export interface TransactionResult {
 
 /**
  * 풀 상태 (트랜잭션 실행 전후)
+ *
+ * 다양한 토큰 페어를 지원하도록 확장되었습니다.
  */
 export interface PoolState {
-  eth: number;
-  btc: number;
-  k: number;
+  // 풀 식별 정보
+  address: string; // 풀 컨트랙트 주소
+  pair: string; // 토큰 페어 (예: 'ETH_USDC')
+
+  // 토큰 정보
+  tokenA: string; // 토큰 A 심볼 (예: 'ETH')
+  tokenB: string; // 토큰 B 심볼 (예: 'USDC')
+  amountA: number; // 토큰 A 수량
+  amountB: number; // 토큰 B 수량
+
+  // AMM 상수
+  k: number; // 곱 불변식 (amountA * amountB)
+
+  // 수수료 정보
+  feeRate: number; // 수수료율
 }
 
 /**
