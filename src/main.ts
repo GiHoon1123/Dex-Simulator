@@ -45,8 +45,6 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addTag('Blockchain')
-    .addTag('Transaction Pool')
-    .addTag('Gas')
     .build();
   const documentBlockchain = SwaggerModule.createDocument(
     app,
