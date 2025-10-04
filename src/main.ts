@@ -55,17 +55,17 @@ async function bootstrap() {
   );
   SwaggerModule.setup('api/blockchain', app, documentBlockchain);
 
-  // 4. MEV Simulation API 문서 (나중에 추가)
-  // const configMev = new DocumentBuilder()
-  //   .setTitle('MEV Simulation APIs')
-  //   .setDescription('MEV 공격 시뮬레이션 API - Frontrun, Backrun, Sandwich')
-  //   .setVersion('1.0')
-  //   .addTag('MEV')
-  //   .build();
-  // const documentMev = SwaggerModule.createDocument(app, configMev, {
-  //   include: [MevSimulationModule],
-  // });
-  // SwaggerModule.setup('api/mev', app, documentMev);
+  // 4. MEV Simulation API 문서
+  const configMev = new DocumentBuilder()
+    .setTitle('MEV Simulation APIs')
+    .setDescription('MEV 공격 시뮬레이션 API - Frontrun, Backrun, Sandwich')
+    .setVersion('1.0')
+    .addTag('MEV Simulation')
+    .build();
+  const documentMev = SwaggerModule.createDocument(app, configMev, {
+    include: [MevSimulationModule],
+  });
+  SwaggerModule.setup('api/mev', app, documentMev);
 
   await app.listen(3000);
   console.log(`Application is running on: http://localhost:3000`);
@@ -73,5 +73,6 @@ async function bootstrap() {
   console.log(`  - All APIs:        http://localhost:3000/api`);
   console.log(`  - DEX Simulation:  http://localhost:3000/api/dex`);
   console.log(`  - Blockchain:      http://localhost:3000/api/blockchain`);
+  console.log(`  - MEV Simulation:  http://localhost:3000/api/mev`);
 }
 bootstrap();
