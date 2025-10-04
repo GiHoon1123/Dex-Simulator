@@ -347,6 +347,7 @@ export class BlockchainController {
       type: dto.type,
       from: dto.from,
       to: dto.to,
+      value: dto.value || '0', // ETH 전송량 (기본값: 0)
       data: dto.data,
       gasPrice,
       gasLimit,
