@@ -239,18 +239,22 @@ export class BlockService {
       };
     }
 
-    // 트랜잭션 실행 시뮬레이션
-    // 실제 로직은 이벤트를 통해 각 서비스가 처리
+    // 트랜잭션 실행 완료 처리 (실제 거래는 이미 풀에서 완료됨)
     transaction.status = TransactionStatus.COMPLETED;
+    transaction.result = {
+      success: true,
+      gasUsed,
+      effectiveGasPrice: transaction.gasPrice,
+      output: {
+        message: '트랜잭션이 블록에 포함되어 실행되었습니다',
+      },
+    };
 
     return {
       success: true,
       gasUsed,
       effectiveGasPrice: transaction.gasPrice,
-      output: {
-        transactionId: transaction.id,
-        type: transaction.type,
-      },
+      result: transaction.result,
     };
   }
 
