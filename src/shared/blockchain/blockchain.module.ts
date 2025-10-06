@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BlockService } from './block.service';
 import { BlockchainController } from './blockchain.controller';
 import { GasService } from './gas.service';
+import { PoolTransactionHandlerService } from './pool-transaction-handler.service';
 import { TransactionGeneratorService } from './transaction-generator.service';
 import { TransactionParserService } from './transaction-parser.service';
 import { TransactionPoolService } from './transaction-pool.service';
@@ -16,6 +18,9 @@ import { TransactionPoolService } from './transaction-pool.service';
  * 모든 시뮬레이션 모듈에서 사용할 수 있습니다.
  */
 @Module({
+  imports: [
+    EventEmitterModule, // 이벤트 시스템을 위한 모듈
+  ],
   controllers: [BlockchainController],
   providers: [
     TransactionPoolService,
@@ -23,6 +28,7 @@ import { TransactionPoolService } from './transaction-pool.service';
     GasService,
     TransactionGeneratorService,
     TransactionParserService,
+    PoolTransactionHandlerService, // Pool 이벤트 구독 서비스
   ],
   exports: [
     TransactionPoolService,
@@ -30,6 +36,7 @@ import { TransactionPoolService } from './transaction-pool.service';
     GasService,
     TransactionGeneratorService,
     TransactionParserService,
+    PoolTransactionHandlerService,
   ],
 })
 export class BlockchainModule {}
