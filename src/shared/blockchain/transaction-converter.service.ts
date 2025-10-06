@@ -48,10 +48,7 @@ export class TransactionConverterService {
 
       this.logger.log(`트랜잭션 메모풀 제출 완료: ${transaction.id}`);
     } catch (error) {
-      this.logger.error(
-        `트랜잭션 처리 실패: ${event.transaction.id}`,
-        error,
-      );
+      this.logger.error(`트랜잭션 처리 실패: ${event.transaction.id}`, error);
     }
   }
 
