@@ -3,7 +3,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BlockService } from './block.service';
 import { BlockchainController } from './blockchain.controller';
 import { GasService } from './gas.service';
-import { PoolTransactionHandlerService } from './pool-transaction-handler.service';
+import { TransactionConverterService } from './transaction-converter.service';
 import { TransactionGeneratorService } from './transaction-generator.service';
 import { TransactionParserService } from './transaction-parser.service';
 import { TransactionPoolService } from './transaction-pool.service';
@@ -28,7 +28,7 @@ import { TransactionPoolService } from './transaction-pool.service';
     GasService,
     TransactionGeneratorService,
     TransactionParserService,
-    PoolTransactionHandlerService, // Pool 이벤트 구독 서비스
+    TransactionConverterService, // 트랜잭션 변환 서비스
   ],
   exports: [
     TransactionPoolService,
@@ -36,7 +36,7 @@ import { TransactionPoolService } from './transaction-pool.service';
     GasService,
     TransactionGeneratorService,
     TransactionParserService,
-    PoolTransactionHandlerService,
+    TransactionConverterService,
   ],
 })
 export class BlockchainModule {}

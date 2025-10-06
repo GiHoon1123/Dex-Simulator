@@ -13,16 +13,16 @@ import {
 } from './types/transaction.interface';
 
 /**
- * Pool 트랜잭션 핸들러 서비스
+ * 트랜잭션 변환 서비스
  *
- * Pool에서 생성된 트랜잭션 구조체를 받아서
+ * 모듈에서 생성된 트랜잭션 구조체를 받아서
  * 완전한 트랜잭션으로 변환하고 메모풀에 제출합니다.
  *
  * 실제 이더리움에서 RPC 노드가 하는 역할을 시뮬레이션합니다.
  */
 @Injectable()
-export class PoolTransactionHandlerService {
-  private readonly logger = new Logger(PoolTransactionHandlerService.name);
+export class TransactionConverterService {
+  private readonly logger = new Logger(TransactionConverterService.name);
 
   constructor(
     private readonly transactionParser: TransactionParserService,
@@ -30,15 +30,15 @@ export class PoolTransactionHandlerService {
   ) {}
 
   /**
-   * Pool에서 생성된 트랜잭션 구조체 이벤트 구독
+   * 모듈에서 생성된 트랜잭션 구조체 이벤트 구독
    * 실제 RPC 노드처럼 트랜잭션을 완성하고 메모풀에 제출
    */
   @OnEvent(POOL_EVENT_TYPES.POOL_TRANSACTION_CREATED)
-  async handlePoolTransactionCreated(
+  async handleTransactionCreated(
     event: PoolTransactionCreatedEvent,
   ): Promise<void> {
     try {
-      this.logger.log(`Pool 트랜잭션 구조체 수신: ${event.transaction.id}`);
+      this.logger.log(`트랜잭션 구조체 수신: ${event.transaction.id}`);
 
       // 트랜잭션 구조체를 완전한 트랜잭션으로 변환
       const transaction = await this.convertToFullTransaction(event);
@@ -46,10 +46,10 @@ export class PoolTransactionHandlerService {
       // 메모풀에 제출
       await this.transactionPool.submitTransaction(transaction);
 
-      this.logger.log(`Pool 트랜잭션 메모풀 제출 완료: ${transaction.id}`);
+      this.logger.log(`트랜잭션 메모풀 제출 완료: ${transaction.id}`);
     } catch (error) {
       this.logger.error(
-        `Pool 트랜잭션 처리 실패: ${event.transaction.id}`,
+        `트랜잭션 처리 실패: ${event.transaction.id}`,
         error,
       );
     }
