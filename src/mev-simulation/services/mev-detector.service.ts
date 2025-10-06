@@ -5,26 +5,29 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TransactionPoolService } from '../../shared/blockchain/transaction-pool.service';
-import { PoolService } from '../../shared/pool/pool.service';
 import { TransactionParserService } from '../../shared/blockchain/transaction-parser.service';
+import { TransactionPoolService } from '../../shared/blockchain/transaction-pool.service';
 import {
+  Transaction,
+  TransactionType,
+} from '../../shared/blockchain/types/transaction.interface';
+import { PoolService } from '../../shared/pool/pool.service';
+import {
+  MEVBotConfig,
+  MEVDetectionCriteria,
   MEVOpportunity,
   MEVOpportunityStatus,
   MEVStrategyType,
-  MEVDetectionCriteria,
-  MEVBotConfig,
 } from '../types/mev.interface';
 import {
+  ExecutionWindow,
+  MarketImpact,
   MEVOpportunityDetection,
   OpportunityAnalysis,
-  StrategyAnalysis,
   RecommendedAction,
   RiskAssessment,
-  MarketImpact,
-  ExecutionWindow,
+  StrategyAnalysis,
 } from '../types/opportunity.interface';
-import { Transaction, TransactionType } from '../../shared/blockchain/types/transaction.interface';
 
 @Injectable()
 export class MevDetectorService {
@@ -40,13 +43,13 @@ export class MevDetectorService {
     private readonly transactionParserService: TransactionParserService,
     private readonly eventEmitter: EventEmitter2,
   ) {
-    // 기본 감지 기준 설정
+    // 기본 감지 기준 설정 (실제 MEV와 유사하게 설정)
     this.detectionCriteria = {
-      minTransactionValue: 5.0, // 5 ETH 이상
-      minGasPrice: 200, // 200 gwei 이상
+      minTransactionValue: 1.0, // 1 ETH 이상
+      minGasPrice: 200, // 200 gwei 이상 (실제 MEV와 유사)
       minSlippage: 0.5, // 0.5% 이상
       maxPoolImpact: 10.0, // 10% 이하
-      minProfitThreshold: 0.1, // 0.1 ETH 이상
+      minProfitThreshold: 0.1, // 0.1 ETH 이상 (실제 MEV와 유사)
     };
   }
 
@@ -61,11 +64,11 @@ export class MevDetectorService {
 
     this.isMonitoring = true;
     this.detectionCriteria = {
-      minTransactionValue: config.minProfit * 10, // 설정 기반 조정
-      minGasPrice: 200,
+      minTransactionValue: config.minProfit * 2, // 설정 기반 조정
+      minGasPrice: 200, // 200 gwei (실제 MEV와 유사)
       minSlippage: 0.5,
       maxPoolImpact: 10.0,
-      minProfitThreshold: config.minProfit,
+      minProfitThreshold: Math.max(config.minProfit, 0.1), // 최소 0.1 ETH 보장 (실제 MEV와 유사)
     };
 
     // 1초마다 트랜잭션 풀 모니터링
@@ -102,7 +105,7 @@ export class MevDetectorService {
   private async scanPendingTransactions(): Promise<void> {
     try {
       const pendingTxs = this.transactionPoolService.getPendingTransactions();
-      
+
       for (const tx of pendingTxs) {
         // 이미 분석한 트랜잭션은 스킵
         if (this.opportunities.has(tx.id)) {
@@ -113,7 +116,9 @@ export class MevDetectorService {
         const opportunity = await this.detectOpportunity(tx);
         if (opportunity) {
           this.opportunities.set(opportunity.id, opportunity);
-          this.logger.log(`MEV 기회 감지: ${opportunity.id} (${opportunity.strategy})`);
+          this.logger.log(
+            `MEV 기회 감지: ${opportunity.id} (${opportunity.strategy})`,
+          );
           this.eventEmitter.emit('mev.opportunity.detected', opportunity);
         }
       }
@@ -125,7 +130,9 @@ export class MevDetectorService {
   /**
    * 개별 트랜잭션에서 MEV 기회 감지
    */
-  private async detectOpportunity(transaction: Transaction): Promise<MEVOpportunity | null> {
+  private async detectOpportunity(
+    transaction: Transaction,
+  ): Promise<MEVOpportunity | null> {
     try {
       // 트랜잭션 타입이 SWAP이 아니면 스킵
       if (transaction.type !== TransactionType.SWAP) {
@@ -161,10 +168,19 @@ export class MevDetectorService {
         targetTransactionId: transaction.id,
         targetPoolAddress: transaction.to,
         strategy: analysis.recommendedAction.strategy!,
-        estimatedProfit: analysis.strategyAnalysis.find(s => s.strategy === analysis.recommendedAction.strategy)?.expectedProfit || 0,
+        estimatedProfit:
+          analysis.strategyAnalysis.find(
+            (s) => s.strategy === analysis.recommendedAction.strategy,
+          )?.expectedProfit || 0,
         riskLevel: analysis.detection.riskAssessment.score,
-        gasCost: analysis.strategyAnalysis.find(s => s.strategy === analysis.recommendedAction.strategy)?.gasCost || 0,
-        netProfit: analysis.strategyAnalysis.find(s => s.strategy === analysis.recommendedAction.strategy)?.netProfit || 0,
+        gasCost:
+          analysis.strategyAnalysis.find(
+            (s) => s.strategy === analysis.recommendedAction.strategy,
+          )?.gasCost || 0,
+        netProfit:
+          analysis.strategyAnalysis.find(
+            (s) => s.strategy === analysis.recommendedAction.strategy,
+          )?.netProfit || 0,
         confidence: analysis.confidence,
         status: MEVOpportunityStatus.DETECTED,
         detectedAt: new Date(),
@@ -173,7 +189,10 @@ export class MevDetectorService {
 
       return opportunity;
     } catch (error) {
-      this.logger.error(`MEV 기회 감지 중 오류 발생 (${transaction.id}):`, error);
+      this.logger.error(
+        `MEV 기회 감지 중 오류 발생 (${transaction.id}):`,
+        error,
+      );
       return null;
     }
   }
@@ -182,8 +201,10 @@ export class MevDetectorService {
    * 기본 감지 기준 확인
    */
   private meetsBasicCriteria(transaction: Transaction): boolean {
-    // 트랜잭션 가치 확인 (ETH 단위)
-    const txValue = parseFloat(transaction.value) / 1e18;
+    // 트랜잭션 가치 확인 (DEX 스왑의 경우 parsedData에서 실제 스왑 금액을 가져옴)
+    const txValue = transaction.parsedData?.params?.amountSpecified
+      ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
+      : parseFloat(transaction.value) / 1e18;
     if (txValue < this.detectionCriteria.minTransactionValue) {
       return false;
     }
@@ -212,7 +233,11 @@ export class MevDetectorService {
         targetPoolAddress: transaction.to,
         detectedAt: new Date(),
         confidence: 0.8, // 기본 신뢰도
-        potentialStrategies: [MEVStrategyType.FRONT_RUN, MEVStrategyType.BACK_RUN, MEVStrategyType.SANDWICH],
+        potentialStrategies: [
+          MEVStrategyType.FRONT_RUN,
+          MEVStrategyType.BACK_RUN,
+          MEVStrategyType.SANDWICH,
+        ],
         estimatedProfit: 0,
         riskAssessment: this.assessRisk(transaction, poolInfo),
         marketImpact: this.calculateMarketImpact(transaction, poolInfo),
@@ -221,33 +246,45 @@ export class MevDetectorService {
 
       // 전략 분석
       const strategyAnalysis: StrategyAnalysis[] = [];
-      
+
       // Front-run 전략 분석
-      const frontRunAnalysis = this.analyzeFrontRunStrategy(transaction, poolInfo);
+      const frontRunAnalysis = this.analyzeFrontRunStrategy(
+        transaction,
+        poolInfo,
+      );
       if (frontRunAnalysis) {
         strategyAnalysis.push(frontRunAnalysis);
       }
 
       // Back-run 전략 분석
-      const backRunAnalysis = this.analyzeBackRunStrategy(transaction, poolInfo);
+      const backRunAnalysis = this.analyzeBackRunStrategy(
+        transaction,
+        poolInfo,
+      );
       if (backRunAnalysis) {
         strategyAnalysis.push(backRunAnalysis);
       }
 
       // Sandwich 전략 분석
-      const sandwichAnalysis = this.analyzeSandwichStrategy(transaction, poolInfo);
+      const sandwichAnalysis = this.analyzeSandwichStrategy(
+        transaction,
+        poolInfo,
+      );
       if (sandwichAnalysis) {
         strategyAnalysis.push(sandwichAnalysis);
       }
 
       // 권장 액션 결정
-      const recommendedAction = this.determineRecommendedAction(strategyAnalysis);
+      const recommendedAction =
+        this.determineRecommendedAction(strategyAnalysis);
 
       return {
         detection,
         strategyAnalysis,
         recommendedAction,
-        confidence: Math.max(...strategyAnalysis.map(s => s.successProbability)),
+        confidence: Math.max(
+          ...strategyAnalysis.map((s) => s.successProbability),
+        ),
         lastUpdated: new Date(),
       };
     } catch (error) {
@@ -274,7 +311,7 @@ export class MevDetectorService {
     totalRiskScore += gasPriceRisk;
 
     // 유동성 리스크
-    const liquidityRisk = Math.max(0, 10 - (poolInfo.totalLiquidity / 100));
+    const liquidityRisk = Math.max(0, 10 - poolInfo.totalLiquidity / 100);
     factors.push({
       type: 'LIQUIDITY',
       severity: liquidityRisk,
@@ -283,7 +320,8 @@ export class MevDetectorService {
     });
     totalRiskScore += liquidityRisk;
 
-    const riskLevel = totalRiskScore > 7 ? 'HIGH' : totalRiskScore > 4 ? 'MEDIUM' : 'LOW';
+    const riskLevel =
+      totalRiskScore > 7 ? 'HIGH' : totalRiskScore > 4 ? 'MEDIUM' : 'LOW';
 
     return {
       level: riskLevel as any,
@@ -296,8 +334,14 @@ export class MevDetectorService {
   /**
    * 시장 영향도 계산
    */
-  private calculateMarketImpact(transaction: Transaction, poolInfo: any): MarketImpact {
-    const txValue = parseFloat(transaction.value) / 1e18;
+  private calculateMarketImpact(
+    transaction: Transaction,
+    poolInfo: any,
+  ): MarketImpact {
+    // DEX 스왑 트랜잭션의 경우 parsedData에서 실제 스왑 금액을 가져옴
+    const txValue = transaction.parsedData?.params?.amountSpecified
+      ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
+      : parseFloat(transaction.value) / 1e18;
     const priceImpact = (txValue / poolInfo.totalLiquidity) * 100;
     const liquidityImpact = Math.min(priceImpact * 2, 100);
     const volumeImpact = Math.min(priceImpact * 1.5, 100);
@@ -330,10 +374,16 @@ export class MevDetectorService {
   /**
    * Front-run 전략 분석
    */
-  private analyzeFrontRunStrategy(transaction: Transaction, poolInfo: any): StrategyAnalysis | null {
-    const txValue = parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.02; // 2% 수익 가정
-    const gasCost = 0.01; // 0.01 ETH 가스비 가정
+  private analyzeFrontRunStrategy(
+    transaction: Transaction,
+    poolInfo: any,
+  ): StrategyAnalysis | null {
+    // DEX 스왑 트랜잭션의 경우 parsedData에서 실제 스왑 금액을 가져옴
+    const txValue = transaction.parsedData?.params?.amountSpecified
+      ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
+      : parseFloat(transaction.value) / 1e18;
+    const expectedProfit = txValue * 0.02; // 2% 수익 가정 (실제 MEV와 유사)
+    const gasCost = 0.01; // 0.01 ETH 가스비 가정 (실제 MEV와 유사)
     const netProfit = expectedProfit - gasCost;
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
@@ -356,10 +406,16 @@ export class MevDetectorService {
   /**
    * Back-run 전략 분석
    */
-  private analyzeBackRunStrategy(transaction: Transaction, poolInfo: any): StrategyAnalysis | null {
-    const txValue = parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.015; // 1.5% 수익 가정
-    const gasCost = 0.008; // 0.008 ETH 가스비 가정
+  private analyzeBackRunStrategy(
+    transaction: Transaction,
+    poolInfo: any,
+  ): StrategyAnalysis | null {
+    // DEX 스왑 트랜잭션의 경우 parsedData에서 실제 스왑 금액을 가져옴
+    const txValue = transaction.parsedData?.params?.amountSpecified
+      ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
+      : parseFloat(transaction.value) / 1e18;
+    const expectedProfit = txValue * 0.015; // 1.5% 수익 가정 (실제 MEV와 유사)
+    const gasCost = 0.008; // 0.008 ETH 가스비 가정 (실제 MEV와 유사)
     const netProfit = expectedProfit - gasCost;
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
@@ -382,10 +438,16 @@ export class MevDetectorService {
   /**
    * Sandwich 전략 분석
    */
-  private analyzeSandwichStrategy(transaction: Transaction, poolInfo: any): StrategyAnalysis | null {
-    const txValue = parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.03; // 3% 수익 가정
-    const gasCost = 0.02; // 0.02 ETH 가스비 가정
+  private analyzeSandwichStrategy(
+    transaction: Transaction,
+    poolInfo: any,
+  ): StrategyAnalysis | null {
+    // DEX 스왑 트랜잭션의 경우 parsedData에서 실제 스왑 금액을 가져옴
+    const txValue = transaction.parsedData?.params?.amountSpecified
+      ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
+      : parseFloat(transaction.value) / 1e18;
+    const expectedProfit = txValue * 0.03; // 3% 수익 가정 (실제 MEV와 유사)
+    const gasCost = 0.02; // 0.02 ETH 가스비 가정 (실제 MEV와 유사)
     const netProfit = expectedProfit - gasCost;
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
@@ -408,7 +470,9 @@ export class MevDetectorService {
   /**
    * 권장 액션 결정
    */
-  private determineRecommendedAction(strategyAnalysis: StrategyAnalysis[]): RecommendedAction {
+  private determineRecommendedAction(
+    strategyAnalysis: StrategyAnalysis[],
+  ): RecommendedAction {
     if (strategyAnalysis.length === 0) {
       return {
         action: 'SKIP',
@@ -419,8 +483,8 @@ export class MevDetectorService {
     }
 
     // 가장 높은 netProfit을 가진 전략 선택
-    const bestStrategy = strategyAnalysis.reduce((best, current) => 
-      current.netProfit > best.netProfit ? current : best
+    const bestStrategy = strategyAnalysis.reduce((best, current) =>
+      current.netProfit > best.netProfit ? current : best,
     );
 
     if (bestStrategy.netProfit < this.detectionCriteria.minProfitThreshold) {
