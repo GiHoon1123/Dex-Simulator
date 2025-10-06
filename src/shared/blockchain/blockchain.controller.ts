@@ -454,7 +454,7 @@ export class BlockchainController {
 
     return {
       message: '트랜잭션 자동 생성이 시작되었습니다',
-      interval: '3~10초 (랜덤)',
+      interval: '1초 (현재)',
       isActive: true,
     };
   }
