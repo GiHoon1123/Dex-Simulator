@@ -1,18 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TransactionParserService } from '../blockchain/transaction-parser.service';
-import { TransactionPoolService } from '../blockchain/transaction-pool.service';
-import {
-  Transaction,
-  TransactionStatus,
-  TransactionType,
-} from '../blockchain/types/transaction.interface';
 import {
   LiquidityAddedEvent,
   LiquidityRemovedEvent,
   POOL_EVENT_TYPES,
   PoolCreatedEvent,
   PoolStatsUpdatedEvent,
+  PoolTransactionCreatedEvent,
   PoolUpdatedEvent,
   SwapExecutedEvent,
 } from '../events/pool.events';
@@ -56,11 +50,7 @@ export class PoolService {
   /** 유동성 카운터 */
   private liquidityCounter = 0;
 
-  constructor(
-    private readonly eventEmitter: EventEmitter2,
-    private readonly transactionPoolService: TransactionPoolService,
-    private readonly transactionParser: TransactionParserService,
-  ) {
+  constructor(private readonly eventEmitter: EventEmitter2) {
     this.initializeDefaultPools();
   }
 
@@ -580,7 +570,9 @@ export class PoolService {
   }
 
   /**
-   * 스왑 트랜잭션 생성 및 제출
+   * 스왑 트랜잭션 구조체 생성 및 이벤트 전송
+   * 실제 지갑처럼 트랜잭션 구조체만 생성하고
+   * Blockchain 모듈로 이벤트를 통해 전송
    */
   private createAndSubmitSwapTransaction(
     params: SwapParams,
@@ -596,41 +588,34 @@ export class PoolService {
       data: '0x',
     };
 
-    // 함수 호출 데이터 생성 (hex)
-    const functionData = this.transactionParser.encodeFunctionData('swap', [
-      swapParams.recipient,
-      swapParams.zeroForOne,
-      swapParams.amountSpecified,
-      swapParams.sqrtPriceLimitX96,
-      swapParams.data,
-    ]);
-
-    // 트랜잭션 생성
-    const transaction: Transaction = {
+    // 트랜잭션 구조체 생성 (실제 지갑처럼)
+    const transactionStructure = {
       id: swapResult.swapId,
-      type: TransactionType.SWAP,
+      type: 'SWAP' as const,
       from: params.recipient,
       to: params.poolAddress,
       value: '0',
-      data: functionData,
+      swapParams,
       gasPrice: params.gasPrice,
       gasLimit: params.gasLimit,
       nonce: Math.floor(Math.random() * 1000000), // 임시 nonce 생성
-      status: TransactionStatus.PENDING,
+    };
+
+    // 이벤트 생성 및 전송
+    const event: PoolTransactionCreatedEvent = {
+      eventId: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'pool.transaction.created',
+      transaction: transactionStructure,
+      poolAddress: params.poolAddress,
       timestamp: new Date(),
     };
 
-    // 파싱된 데이터 추가
-    const parsedData =
-      this.transactionParser.parseTransactionData(functionData);
-    if (parsedData) {
-      (transaction as any).parsedData = parsedData;
-    }
+    // Blockchain 모듈로 이벤트 전송
+    this.eventEmitter.emit(POOL_EVENT_TYPES.POOL_TRANSACTION_CREATED, event);
 
-    // 트랜잭션 풀에 제출
-    this.transactionPoolService.submitTransaction(transaction);
-
-    this.logger.log(`스왑 트랜잭션 제출됨: ${transaction.id}`);
+    this.logger.log(
+      `스왑 트랜잭션 구조체 생성 및 이벤트 전송: ${transactionStructure.id}`,
+    );
   }
 
   /**
