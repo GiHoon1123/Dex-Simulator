@@ -44,13 +44,17 @@ export class TransactionPoolService {
       );
     }
 
-    // 논스 검증 및 업데이트
-    this.validateAndUpdateNonce(transaction);
+    // 기존 트랜잭션이 있는지 확인 (재제출인 경우 논스 검증 스킵)
+    const existingTx = this.pendingTransactions.get(transaction.id);
+    if (!existingTx) {
+      // 논스 검증 및 업데이트 (새로운 트랜잭션만)
+      this.validateAndUpdateNonce(transaction);
+    }
 
     // 트랜잭션 상태 설정
     transaction.status = TransactionStatus.PENDING;
 
-    // 풀에 추가
+    // 풀에 추가 (기존 트랜잭션 덮어쓰기)
     this.pendingTransactions.set(transaction.id, transaction);
 
     // 이벤트 발생 (MEV 봇이 감지)

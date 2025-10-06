@@ -158,6 +158,9 @@ export class BlockService {
         } else {
           failedTransactions.push(tx);
 
+          // 실패한 트랜잭션을 풀에 다시 추가 (다음 블록에서 재시도)
+          this.handleFailedTransaction(tx);
+
           // 트랜잭션 실패 이벤트
           const failedEvent: TransactionFailedEvent = {
             transaction: tx,
@@ -170,6 +173,9 @@ export class BlockService {
         tx.status = TransactionStatus.FAILED;
         tx.error = error.message;
         failedTransactions.push(tx);
+
+        // 실패한 트랜잭션을 풀에 다시 추가 (다음 블록에서 재시도)
+        this.handleFailedTransaction(tx);
 
         const failedEvent: TransactionFailedEvent = {
           transaction: tx,
@@ -443,5 +449,44 @@ export class BlockService {
       const gasUsed = tx.gasUsed || 0;
       return total + this.gasService.calculateTotalCost(gasUsed, tx.gasPrice);
     }, 0);
+  }
+
+  /**
+   * 실패한 트랜잭션 처리
+   *
+   * 실패한 트랜잭션을 풀에 다시 추가하여 다음 블록에서 재시도할 수 있게 합니다.
+   * 가스 한도 초과로 실패한 경우 가스 한도를 증가시켜 재시도합니다.
+   *
+   * @param transaction 실패한 트랜잭션
+   */
+  private handleFailedTransaction(transaction: Transaction): void {
+    // 트랜잭션 상태를 PENDING으로 재설정
+    transaction.status = TransactionStatus.PENDING;
+    transaction.blockNumber = undefined;
+    transaction.blockTimestamp = undefined;
+    transaction.gasUsed = undefined;
+    transaction.error = undefined;
+    transaction.result = undefined;
+
+    // 가스 한도 초과로 실패한 경우 가스 한도를 증가시킴
+    if (transaction.error === '가스 한도 초과') {
+      transaction.gasLimit = Math.floor(transaction.gasLimit * 1.2); // 20% 증가
+      console.log(
+        `[BlockService] 트랜잭션 ${transaction.id} 가스 한도 증가: ${transaction.gasLimit}`,
+      );
+    }
+
+    // 트랜잭션을 풀에 다시 추가
+    try {
+      this.transactionPoolService.submitTransaction(transaction);
+      console.log(
+        `[BlockService] 실패한 트랜잭션 ${transaction.id}을 풀에 다시 추가했습니다.`,
+      );
+    } catch (error) {
+      console.error(
+        `[BlockService] 실패한 트랜잭션 ${transaction.id} 풀 재추가 실패:`,
+        error.message,
+      );
+    }
   }
 }
