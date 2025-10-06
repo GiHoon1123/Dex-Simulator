@@ -268,6 +268,59 @@ export interface OracleStatusChangedEvent {
 }
 
 /**
+ * 풀에서 생성된 트랜잭션 구조체 이벤트
+ * Pool에서 스왑 실행 후 트랜잭션 구조체를 생성하고
+ * Blockchain 모듈로 전송할 때 사용
+ */
+export interface PoolTransactionCreatedEvent {
+  /** 이벤트 ID */
+  eventId: string;
+
+  /** 이벤트 타입 */
+  type: 'pool.transaction.created';
+
+  /** 트랜잭션 구조체 */
+  transaction: {
+    id: string;
+    type: 'SWAP' | 'ADD_LIQUIDITY' | 'REMOVE_LIQUIDITY';
+    from: string;
+    to: string;
+    value: string;
+    swapParams?: {
+      recipient: string;
+      zeroForOne: boolean;
+      amountSpecified: string;
+      sqrtPriceLimitX96: string;
+      data: string;
+    };
+    addLiquidityParams?: {
+      recipient: string;
+      amountA: number;
+      amountB: number;
+      amountAMin: number;
+      amountBMin: number;
+      deadline: number;
+    };
+    removeLiquidityParams?: {
+      recipient: string;
+      liquidityAmount: number;
+      amountAMin: number;
+      amountBMin: number;
+      deadline: number;
+    };
+    gasPrice: number;
+    gasLimit: number;
+    nonce: number;
+  };
+
+  /** 풀 주소 */
+  poolAddress: string;
+
+  /** 이벤트 발생 시간 */
+  timestamp: Date;
+}
+
+/**
  * 풀 이벤트 유니온 타입
  */
 export type PoolEvent =
@@ -280,7 +333,8 @@ export type PoolEvent =
   | MEVOpportunityDetectedEvent
   | MEVOpportunityExpiredEvent
   | PoolStatsUpdatedEvent
-  | OracleStatusChangedEvent;
+  | OracleStatusChangedEvent
+  | PoolTransactionCreatedEvent;
 
 /**
  * 이벤트 타입 매핑
@@ -296,6 +350,7 @@ export const POOL_EVENT_TYPES = {
   MEV_OPPORTUNITY_EXPIRED: 'mev.opportunity.expired',
   POOL_STATS_UPDATED: 'pool.stats.updated',
   ORACLE_STATUS_CHANGED: 'oracle.status.changed',
+  POOL_TRANSACTION_CREATED: 'pool.transaction.created',
 } as const;
 
 /**
