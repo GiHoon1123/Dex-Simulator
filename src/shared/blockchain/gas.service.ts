@@ -16,13 +16,13 @@ export class GasService {
 
   // 트랜잭션 타입별 가스 사용량 (추정치)
   private readonly GAS_ESTIMATES = {
-    [TransactionType.SWAP]: 200000,
-    [TransactionType.ADD_LIQUIDITY]: 300000,
-    [TransactionType.REMOVE_LIQUIDITY]: 250000,
-    [TransactionType.TRANSFER]: 21000,
-    [TransactionType.MEV_FRONTRUN]: 200000,
-    [TransactionType.MEV_BACKRUN]: 200000,
-    [TransactionType.MEV_SANDWICH]: 400000,
+    [TransactionType.SWAP]: 300000, // 200,000-400,000 범위
+    [TransactionType.ADD_LIQUIDITY]: 400000, // 300,000-500,000 범위
+    [TransactionType.REMOVE_LIQUIDITY]: 350000, // 250,000-450,000 범위
+    [TransactionType.TRANSFER]: 21000, // 17,000-25,000 범위
+    [TransactionType.MEV_FRONTRUN]: 300000, // 200,000-400,000 범위
+    [TransactionType.MEV_BACKRUN]: 300000, // 200,000-400,000 범위
+    [TransactionType.MEV_SANDWICH]: 500000, // 400,000-600,000 범위
   };
 
   /**
@@ -50,7 +50,13 @@ export class GasService {
    * @returns 예상 가스 사용량
    */
   estimateGas(transactionType: TransactionType): number {
-    return this.GAS_ESTIMATES[transactionType] || 200000;
+    const baseGas = this.GAS_ESTIMATES[transactionType] || 200000;
+
+    // 가스 사용량에 랜덤 변동성 추가 (실제 이더리움과 유사하게)
+    const variation = 0.2; // 20% 변동
+    const randomFactor = 1 + (Math.random() - 0.5) * variation;
+
+    return Math.floor(baseGas * randomFactor);
   }
 
   /**

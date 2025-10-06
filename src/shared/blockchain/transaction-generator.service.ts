@@ -25,8 +25,8 @@ export class TransactionGeneratorService {
   private userCounter = 0;
 
   // 설정 (MEV 시뮬레이션에 최적화된 기본값)
-  private readonly MIN_INTERVAL = 12000; // 최소 12초
-  private readonly MAX_INTERVAL = 12000; // 최대 12초
+  private readonly MIN_INTERVAL = 1000; // 최소 1초
+  private readonly MAX_INTERVAL = 1000; // 최대 1초
 
   /**
    * 풀 주소 매핑
@@ -66,7 +66,7 @@ export class TransactionGeneratorService {
   /**
    * 자동 트랜잭션 생성 시작
    *
-   * 12초 간격으로 랜덤 트랜잭션을 생성하여 풀에 제출합니다.
+   * 1초 간격으로 랜덤 트랜잭션을 생성하여 풀에 제출합니다.
    */
   startGenerating(): void {
     if (this.isGenerating) {
@@ -77,7 +77,7 @@ export class TransactionGeneratorService {
     this.isGenerating = true;
     this.scheduleNextTransaction();
 
-    console.log('트랜잭션 자동 생성 시작 (12초 간격)');
+    console.log('트랜잭션 자동 생성 시작 (1초 간격)');
   }
 
   /**

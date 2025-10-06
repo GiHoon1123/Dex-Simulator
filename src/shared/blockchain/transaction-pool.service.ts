@@ -81,14 +81,26 @@ export class TransactionPoolService {
   /**
    * 블록 생성을 위한 트랜잭션 선택
    *
-   * 가스 가격이 높은 순으로 트랜잭션을 선택하고 풀에서 제거합니다.
+   * 가스 가격이 높은 순으로 트랜잭션을 선택하고 가스 한도를 체크합니다.
+   * 가스 한도 초과 시 해당 트랜잭션은 제외하고 풀에서 제거합니다.
    *
-   * @param limit 선택할 트랜잭션 최대 개수
+   * @param maxGasLimit 최대 가스 한도
    * @returns 선택된 트랜잭션 배열
    */
-  selectTransactionsForBlock(limit: number): Transaction[] {
-    const pending = this.getPendingTransactions();
-    const selected = pending.slice(0, limit);
+  selectTransactionsForBlock(maxGasLimit: number): Transaction[] {
+    const sorted = this.getPendingTransactions();
+    const selected: Transaction[] = [];
+    let totalGas = 0;
+
+    for (const tx of sorted) {
+      // 다음 트랜잭션 추가 시 가스 한도 초과 체크
+      if (totalGas + tx.gasLimit > maxGasLimit) {
+        break; // 이 트랜잭션은 제외하고 현재까지로 블록 생성
+      }
+
+      selected.push(tx);
+      totalGas += tx.gasLimit;
+    }
 
     // 선택된 트랜잭션은 풀에서 제거
     selected.forEach((tx) => {
@@ -143,6 +155,20 @@ export class TransactionPoolService {
    */
   clearPool(): void {
     this.pendingTransactions.clear();
+  }
+
+  /**
+   * 가스 한도 도달 체크
+   *
+   * @param gasLimit 체크할 가스 한도
+   * @returns 가스 한도 도달 여부
+   */
+  isGasLimitReached(gasLimit: number): boolean {
+    const totalGas = Array.from(this.pendingTransactions.values()).reduce(
+      (sum, tx) => sum + tx.gasLimit,
+      0,
+    );
+    return totalGas >= gasLimit;
   }
 
   /**

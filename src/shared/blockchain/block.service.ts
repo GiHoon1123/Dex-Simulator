@@ -34,12 +34,14 @@ export class BlockService {
 
   // 블록 설정
   private readonly BLOCK_SIZE_LIMIT = 10; // 블록당 최대 10개 트랜잭션
-  private readonly BLOCK_GAS_LIMIT = 3000000;
+  private readonly BLOCK_GAS_LIMIT = 30000000; // 30M gas (이더리움과 동일)
 
   // 블록 생성 모드
   private autoProduction = false;
   private autoProductionInterval: NodeJS.Timeout | null = null;
   private readonly AUTO_BLOCK_INTERVAL = 12000; // 12초 (이더리움과 동일)
+  private readonly CHECK_INTERVAL = 1000; // 1초마다 체크
+  private lastBlockTime = 0; // 마지막 블록 생성 시간
 
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
@@ -66,9 +68,9 @@ export class BlockService {
     };
     this.eventEmitter.emit('block.creating', creatingEvent);
 
-    // 트랜잭션 선택 (가스 가격 순)
+    // 트랜잭션 선택 (가스 가격 순, 가스 한도 체크)
     const transactions = this.transactionPoolService.selectTransactionsForBlock(
-      this.BLOCK_SIZE_LIMIT,
+      this.BLOCK_GAS_LIMIT,
     );
 
     // 선택된 트랜잭션들에 대한 이벤트 발생
@@ -325,7 +327,7 @@ export class BlockService {
   /**
    * 자동 블록 생성 시작
    *
-   * 설정된 인터벌마다 자동으로 블록을 생성하고 실행합니다.
+   * 1초마다 체크하여 12초 경과 또는 가스 한도 도달 시 블록을 생성합니다.
    */
   startAutoProduction(): void {
     if (this.autoProduction) {
@@ -334,12 +336,43 @@ export class BlockService {
     }
 
     this.autoProduction = true;
-    this.autoProductionInterval = setInterval(() => {
-      const block = this.createBlock();
-      void this.executeBlock(block);
-    }, this.AUTO_BLOCK_INTERVAL);
+    this.lastBlockTime = Date.now();
 
-    console.log(`자동 블록 생성 시작 (${this.AUTO_BLOCK_INTERVAL}ms 간격)`);
+    this.autoProductionInterval = setInterval(() => {
+      void this.checkAndProduceBlock();
+    }, this.CHECK_INTERVAL);
+
+    console.log(
+      `자동 블록 생성 시작 (1초마다 체크, 12초 경과 또는 가스 한도 도달 시 블록 생성)`,
+    );
+  }
+
+  /**
+   * 블록 생성 조건 체크 및 블록 생성
+   *
+   * 12초 경과 또는 가스 한도 도달 시 블록을 생성합니다.
+   */
+  private async checkAndProduceBlock(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastBlock = now - this.lastBlockTime;
+
+    // 12초 경과 또는 가스 한도 도달 시 블록 생성
+    if (
+      timeSinceLastBlock >= this.AUTO_BLOCK_INTERVAL ||
+      this.transactionPoolService.isGasLimitReached(this.BLOCK_GAS_LIMIT)
+    ) {
+      const block = this.createBlock();
+      await this.executeBlock(block);
+      this.lastBlockTime = now;
+
+      const reason =
+        timeSinceLastBlock >= this.AUTO_BLOCK_INTERVAL
+          ? '시간 경과'
+          : '가스 한도 도달';
+      console.log(
+        `블록 생성 완료 (${reason}): 블록 #${block.blockNumber}, 트랜잭션 ${block.transactionCount}개, 가스 사용량 ${block.gasUsed}/${this.BLOCK_GAS_LIMIT}`,
+      );
+    }
   }
 
   /**
