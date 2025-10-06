@@ -39,7 +39,7 @@ export class MevDetectorService {
 
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
-    private readonly poolService: PoolService,
+    private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
     private readonly transactionParserService: TransactionParserService,
     private readonly eventEmitter: EventEmitter2,
   ) {
@@ -150,6 +150,7 @@ export class MevDetectorService {
       }
 
       // 풀 정보 가져오기 (임시로 기본값 사용)
+      // TODO: 구체화 시 this.poolService.getPoolInfo(transaction.to) 사용
       const poolInfo = {
         totalLiquidity: 1000, // 1000 ETH
         token0: 'ETH',

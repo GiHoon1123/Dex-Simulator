@@ -4,30 +4,22 @@
  */
 
 import { Module, forwardRef } from '@nestjs/common';
+import { BlockchainModule } from '../shared/blockchain/blockchain.module';
+import { PoolModule } from '../shared/pool/pool.module';
 import { MevController } from './controllers/mev.controller';
 import { MevBotService } from './services/mev-bot.service';
 import { MevDetectorService } from './services/mev-detector.service';
 import { MevStrategyService } from './services/mev-strategy.service';
-import { BlockchainModule } from '../shared/blockchain/blockchain.module';
-import { PoolModule } from '../shared/pool/pool.module';
 
 @Module({
   imports: [
     // 블록체인 모듈 (트랜잭션 풀, 블록 서비스 등)
     forwardRef(() => BlockchainModule),
-    // 풀 모듈 (DEX 풀 서비스, 오라클 등)
+    // 풀 모듈 (DEX 풀 서비스, 오라클 등) - TODO: 구체화 시 실제 풀 정보 조회에 사용
     forwardRef(() => PoolModule),
   ],
   controllers: [MevController],
-  providers: [
-    MevBotService,
-    MevDetectorService,
-    MevStrategyService,
-  ],
-  exports: [
-    MevBotService,
-    MevDetectorService,
-    MevStrategyService,
-  ],
+  providers: [MevBotService, MevDetectorService, MevStrategyService],
+  exports: [MevBotService, MevDetectorService, MevStrategyService],
 })
 export class MevSimulationModule {}

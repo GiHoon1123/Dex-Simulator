@@ -5,26 +5,22 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TransactionParserService } from '../../shared/blockchain/transaction-parser.service';
 import { TransactionPoolService } from '../../shared/blockchain/transaction-pool.service';
 import { PoolService } from '../../shared/pool/pool.service';
-import { TransactionParserService } from '../../shared/blockchain/transaction-parser.service';
 import {
   MEVOpportunity,
   MEVStrategyType,
-  MEVOpportunityStatus,
   TransactionData,
-  MEVStrategyResult,
 } from '../types/mev.interface';
 import {
-  MEVStrategy,
-  FrontRunStrategy,
   BackRunStrategy,
+  FrontRunStrategy,
+  MEVStrategy,
   SandwichStrategy,
   StrategyExecutionContext,
   StrategyExecutionResult,
-  MarketConditions,
 } from '../types/strategy.interface';
-import { Transaction, TransactionType } from '../../shared/blockchain/types/transaction.interface';
 
 @Injectable()
 export class MevStrategyService {
@@ -33,7 +29,7 @@ export class MevStrategyService {
 
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
-    private readonly poolService: PoolService,
+    private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
     private readonly transactionParserService: TransactionParserService,
     private readonly eventEmitter: EventEmitter2,
   ) {
@@ -53,9 +49,12 @@ export class MevStrategyService {
       expectedPriceIncrease: 0,
       sellThreshold: 0,
       canExecute: (opportunity) => this.canExecuteFrontRun(opportunity),
-      calculateProfit: (opportunity) => this.calculateFrontRunProfit(opportunity),
-      generateTransactions: (opportunity) => this.generateFrontRunTransactions(opportunity),
-      estimateGasCost: (opportunity) => this.estimateFrontRunGasCost(opportunity),
+      calculateProfit: (opportunity) =>
+        this.calculateFrontRunProfit(opportunity),
+      generateTransactions: (opportunity) =>
+        this.generateFrontRunTransactions(opportunity),
+      estimateGasCost: (opportunity) =>
+        this.estimateFrontRunGasCost(opportunity),
     };
 
     // Back-run 전략
@@ -67,9 +66,12 @@ export class MevStrategyService {
       buyAmount: 0,
       expectedPriceDecrease: 0,
       canExecute: (opportunity) => this.canExecuteBackRun(opportunity),
-      calculateProfit: (opportunity) => this.calculateBackRunProfit(opportunity),
-      generateTransactions: (opportunity) => this.generateBackRunTransactions(opportunity),
-      estimateGasCost: (opportunity) => this.estimateBackRunGasCost(opportunity),
+      calculateProfit: (opportunity) =>
+        this.calculateBackRunProfit(opportunity),
+      generateTransactions: (opportunity) =>
+        this.generateBackRunTransactions(opportunity),
+      estimateGasCost: (opportunity) =>
+        this.estimateBackRunGasCost(opportunity),
     };
 
     // Sandwich 전략
@@ -82,9 +84,12 @@ export class MevStrategyService {
       maxSlippage: 0,
       minProfitMargin: 0,
       canExecute: (opportunity) => this.canExecuteSandwich(opportunity),
-      calculateProfit: (opportunity) => this.calculateSandwichProfit(opportunity),
-      generateTransactions: (opportunity) => this.generateSandwichTransactions(opportunity),
-      estimateGasCost: (opportunity) => this.estimateSandwichGasCost(opportunity),
+      calculateProfit: (opportunity) =>
+        this.calculateSandwichProfit(opportunity),
+      generateTransactions: (opportunity) =>
+        this.generateSandwichTransactions(opportunity),
+      estimateGasCost: (opportunity) =>
+        this.estimateSandwichGasCost(opportunity),
     };
 
     this.strategies.set(MEVStrategyType.FRONT_RUN, frontRunStrategy);
@@ -97,7 +102,9 @@ export class MevStrategyService {
   /**
    * 전략 실행
    */
-  async executeStrategy(opportunity: MEVOpportunity): Promise<StrategyExecutionResult> {
+  async executeStrategy(
+    opportunity: MEVOpportunity,
+  ): Promise<StrategyExecutionResult> {
     const startTime = Date.now();
     const strategy = this.strategies.get(opportunity.strategy);
 
@@ -159,8 +166,10 @@ export class MevStrategyService {
       }
 
       result.executionTime = Date.now() - startTime;
-      this.logger.log(`전략 실행 완료: ${opportunity.strategy} - 수익: ${result.netProfit.toFixed(4)} ETH`);
-      
+      this.logger.log(
+        `전략 실행 완료: ${opportunity.strategy} - 수익: ${result.netProfit.toFixed(4)} ETH`,
+      );
+
       // 이벤트 발생
       this.eventEmitter.emit('mev.strategy.executed', {
         opportunity,
@@ -169,7 +178,10 @@ export class MevStrategyService {
 
       return result;
     } catch (error) {
-      this.logger.error(`전략 실행 중 오류 발생 (${opportunity.strategy}):`, error);
+      this.logger.error(
+        `전략 실행 중 오류 발생 (${opportunity.strategy}):`,
+        error,
+      );
       return {
         strategy: opportunity.strategy,
         success: false,
@@ -212,7 +224,9 @@ export class MevStrategyService {
   /**
    * Front-run 전략 트랜잭션 생성
    */
-  private generateFrontRunTransactions(opportunity: MEVOpportunity): TransactionData[] {
+  private generateFrontRunTransactions(
+    opportunity: MEVOpportunity,
+  ): TransactionData[] {
     const transactions: TransactionData[] = [];
 
     // 1. 매수 트랜잭션 (Front-run)
@@ -290,7 +304,9 @@ export class MevStrategyService {
   /**
    * Back-run 전략 트랜잭션 생성
    */
-  private generateBackRunTransactions(opportunity: MEVOpportunity): TransactionData[] {
+  private generateBackRunTransactions(
+    opportunity: MEVOpportunity,
+  ): TransactionData[] {
     const transactions: TransactionData[] = [];
 
     // 매수 트랜잭션 (Back-run)
@@ -347,7 +363,9 @@ export class MevStrategyService {
   /**
    * Sandwich 전략 트랜잭션 생성
    */
-  private generateSandwichTransactions(opportunity: MEVOpportunity): TransactionData[] {
+  private generateSandwichTransactions(
+    opportunity: MEVOpportunity,
+  ): TransactionData[] {
     const transactions: TransactionData[] = [];
 
     // 1. Front-run 트랜잭션 (매수)
@@ -595,13 +613,15 @@ export class MevStrategyService {
   /**
    * 실행 컨텍스트 생성
    */
-  private async createExecutionContext(opportunity: MEVOpportunity): Promise<StrategyExecutionContext> {
+  private async createExecutionContext(
+    opportunity: MEVOpportunity,
+  ): Promise<StrategyExecutionContext> {
     const poolInfo = {
       totalLiquidity: 1000, // 1000 ETH
       token0: 'ETH',
       token1: 'USDC',
     };
-    
+
     return {
       opportunity,
       currentPoolState: poolInfo,
@@ -620,7 +640,9 @@ export class MevStrategyService {
   /**
    * 트랜잭션 제출
    */
-  private async submitTransaction(transactionData: TransactionData): Promise<string> {
+  private async submitTransaction(
+    transactionData: TransactionData,
+  ): Promise<string> {
     // 실제로는 TransactionPoolService를 통해 제출
     // 여기서는 시뮬레이션을 위해 해시 생성
     const hash = `0x${Math.random().toString(16).substr(2, 64)}`;
