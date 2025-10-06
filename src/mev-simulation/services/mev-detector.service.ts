@@ -5,7 +5,6 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TransactionParserService } from '../../shared/blockchain/transaction-parser.service';
 import { TransactionPoolService } from '../../shared/blockchain/transaction-pool.service';
 import {
   Transaction,
@@ -40,7 +39,6 @@ export class MevDetectorService {
   constructor(
     private readonly transactionPoolService: TransactionPoolService,
     private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
-    private readonly transactionParserService: TransactionParserService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     // 기본 감지 기준 설정 (실제 MEV와 유사하게 설정)

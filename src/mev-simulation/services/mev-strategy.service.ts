@@ -6,7 +6,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TransactionParserService } from '../../shared/blockchain/transaction-parser.service';
-import { TransactionPoolService } from '../../shared/blockchain/transaction-pool.service';
 import { PoolService } from '../../shared/pool/pool.service';
 import {
   MEVOpportunity,
@@ -28,7 +27,6 @@ export class MevStrategyService {
   private strategies: Map<MEVStrategyType, MEVStrategy> = new Map();
 
   constructor(
-    private readonly transactionPoolService: TransactionPoolService,
     private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
     private readonly transactionParserService: TransactionParserService,
     private readonly eventEmitter: EventEmitter2,
