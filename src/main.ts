@@ -5,6 +5,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DexSimulationModule } from './dex-simulation/dex-simulation.module';
 import { MevSimulationModule } from './mev-simulation/mev-simulation.module';
 import { BlockchainModule } from './shared/blockchain/blockchain.module';
+import { MEVBotConfig } from './mev-simulation/types/mev.interface';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -102,12 +103,13 @@ async function bootstrap() {
       minProfit: 0.01,
       maxRisk: 0.8,
       gasPriceMultiplier: 1.5,
-      maxOpportunities: 10,
+      maxOpportunities: 10000000000,
+      // maxOpportunities: 10,
       opportunityTimeout: 30000,
       minConfidence: 0.7,
       enabledStrategies: ['FRONT_RUN', 'BACK_RUN', 'SANDWICH'],
     };
-    mevBotService.startBot(mevConfig as any);
+    mevBotService.startBot(mevConfig as MEVBotConfig);
     console.log('🤖 MEV 봇 시작됨\n');
   }
 }
