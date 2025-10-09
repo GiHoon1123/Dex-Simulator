@@ -287,7 +287,6 @@ export class MevBotService {
     this.botState.activeOpportunities.push(opportunity);
     this.botState.totalOpportunities++;
 
-    this.logger.debug(`기회가 큐에 추가됨: ${opportunity.id}`);
     this.eventEmitter.emit('mev.opportunity.queued', opportunity);
   }
 
@@ -460,7 +459,6 @@ export class MevBotService {
         this.botState.activeOpportunities.filter(
           (o) => o.id !== opportunity.id,
         );
-      this.logger.debug(`만료된 기회 제거: ${opportunity.id}`);
     }
   }
 
