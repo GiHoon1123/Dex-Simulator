@@ -24,6 +24,7 @@ export class MevBotService {
   private executionQueue: MEVOpportunity[] = [];
   private isProcessing = false;
   private stats: MEVStats;
+  private statsLogCounter = 0; // 통계 로그 출력 카운터
 
   constructor(
     private readonly mevDetector: MevDetectorService,
@@ -245,6 +246,15 @@ export class MevBotService {
           await this.executeOpportunity(opportunity);
         }
 
+        // 30초마다 통계 로그 출력
+        this.statsLogCounter++;
+        if (this.statsLogCounter >= 30) {
+          this.logger.log(
+            `📊 MEV 통계 | 기회: ${this.stats.totalOpportunities} | 성공: ${this.stats.successfulAttacks} (${this.stats.successRate.toFixed(1)}%) | 순수익: ${this.stats.netProfit.toFixed(4)} ETH`,
+          );
+          this.statsLogCounter = 0;
+        }
+
         // 1초 대기
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (error) {
@@ -277,7 +287,7 @@ export class MevBotService {
     this.botState.activeOpportunities.push(opportunity);
     this.botState.totalOpportunities++;
 
-    this.logger.log(`기회가 큐에 추가되었습니다: ${opportunity.id}`);
+    this.logger.debug(`기회가 큐에 추가됨: ${opportunity.id}`);
     this.eventEmitter.emit('mev.opportunity.queued', opportunity);
   }
 
@@ -315,7 +325,7 @@ export class MevBotService {
    */
   private async executeOpportunity(opportunity: MEVOpportunity): Promise<void> {
     try {
-      this.logger.log(
+      this.logger.debug(
         `기회 실행 시작: ${opportunity.id} (${opportunity.strategy})`,
       );
 
@@ -333,9 +343,12 @@ export class MevBotService {
         ? MEVOpportunityStatus.COMPLETED
         : MEVOpportunityStatus.FAILED;
 
-      this.logger.log(
-        `기회 실행 완료: ${opportunity.id} - 성공: ${result.success}, 수익: ${result.netProfit.toFixed(4)} ETH`,
-      );
+      // 성공한 경우에만 로그 출력 (5번에 1번만)
+      if (result.success && Math.random() < 0.2) {
+        this.logger.log(
+          `✅ MEV 성공: ${opportunity.strategy} - 수익: ${result.netProfit.toFixed(4)} ETH`,
+        );
+      }
     } catch (error) {
       this.logger.error(`기회 실행 중 오류 발생 (${opportunity.id}):`, error);
       opportunity.status = MEVOpportunityStatus.FAILED;
@@ -447,7 +460,7 @@ export class MevBotService {
         this.botState.activeOpportunities.filter(
           (o) => o.id !== opportunity.id,
         );
-      this.logger.log(`만료된 기회 제거: ${opportunity.id}`);
+      this.logger.debug(`만료된 기회 제거: ${opportunity.id}`);
     }
   }
 

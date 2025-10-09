@@ -164,7 +164,7 @@ export class MevStrategyService {
       }
 
       result.executionTime = Date.now() - startTime;
-      this.logger.log(
+      this.logger.debug(
         `전략 실행 완료: ${opportunity.strategy} - 수익: ${result.netProfit.toFixed(4)} ETH`,
       );
 

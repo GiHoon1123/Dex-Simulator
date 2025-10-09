@@ -41,13 +41,13 @@ export class MevDetectorService {
     private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
     private readonly eventEmitter: EventEmitter2,
   ) {
-    // 기본 감지 기준 설정 (시뮬레이션에 맞게 조정)
+    // 기본 감지 기준 설정 (현실적인 MEV 기준에 맞게 조정)
     this.detectionCriteria = {
-      minTransactionValue: 0.1, // 0.1 ETH 이상 (시뮬레이션 트랜잭션에 맞게 조정)
-      minGasPrice: 50, // 50 gwei 이상 (시뮬레이션 트랜잭션에 맞게 조정)
+      minTransactionValue: 5.0, // 5 ETH 이상 (대형 거래만 타겟)
+      minGasPrice: 100, // 100 gwei 이상 (높은 가스비 = 긴급 거래)
       minSlippage: 0.5, // 0.5% 이상
       maxPoolImpact: 10.0, // 10% 이하
-      minProfitThreshold: 0.001, // 0.001 ETH 이상 (시뮬레이션에 맞게 조정)
+      minProfitThreshold: 0.05, // 0.05 ETH 이상 ($100-150, 현실적인 MEV 최소 수익)
     };
     this.logger.log('[DEBUG] MevDetectorService 생성자 호출됨');
     this.logger.log('[DEBUG] MevDetectorService 초기화 완료');
@@ -133,9 +133,12 @@ export class MevDetectorService {
         const opportunity = await this.detectOpportunity(tx);
         if (opportunity) {
           this.opportunities.set(opportunity.id, opportunity);
-          this.logger.log(
-            `MEV 기회 감지: ${opportunity.id} (${opportunity.strategy})`,
-          );
+          // 10번에 1번만 로그 출력
+          if (Math.random() < 0.1) {
+            this.logger.log(
+              `💎 MEV 기회 감지: ${opportunity.strategy} - 예상 수익: ${opportunity.netProfit.toFixed(4)} ETH`,
+            );
+          }
           this.eventEmitter.emit('mev.opportunity.detected', opportunity);
         } else {
           this.logger.debug(`[DEBUG] 트랜잭션 ${tx.id}에서 MEV 기회 없음`);

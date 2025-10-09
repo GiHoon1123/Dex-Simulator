@@ -264,26 +264,29 @@ export class TransactionGeneratorService {
   /**
    * 거래 크기 선택
    *
-   * MEV 시뮬레이션에 적합한 다양한 크기의 거래를 생성합니다.
-   * 다양한 크기의 거래로 MEV 기회를 제공합니다.
+   * 현실적인 DEX 거래 크기 분포를 시뮬레이션합니다.
+   * 대부분은 소액 거래이고, 대형 거래는 드물게 발생합니다.
    *
    * @returns ETH 기준 거래 크기
    */
   private selectTransactionSize(): number {
     const rand = Math.random();
 
-    if (rand < 0.3) {
-      // 30% 소액 (1~5 ETH) - 일반 거래
-      return 1 + Math.random() * 4;
-    } else if (rand < 0.6) {
-      // 30% 중액 (5~20 ETH) - 샌드위치 가능
+    if (rand < 0.5) {
+      // 50% 소액 (0.1~2 ETH) - 일반 사용자 거래 (MEV 타겟 아님)
+      return 0.1 + Math.random() * 1.9;
+    } else if (rand < 0.75) {
+      // 25% 소중액 (2~5 ETH) - 일반 거래
+      return 2 + Math.random() * 3;
+    } else if (rand < 0.9) {
+      // 15% 중액 (5~20 ETH) - MEV 가능
       return 5 + Math.random() * 15;
-    } else if (rand < 0.85) {
-      // 25% 대액 (20~50 ETH) - 프론트런 가능
+    } else if (rand < 0.97) {
+      // 7% 대액 (20~50 ETH) - MEV 타겟!
       return 20 + Math.random() * 30;
     } else {
-      // 15% 초대액 (50~100 ETH) - MEV 주요 타겟!
-      return 50 + Math.random() * 50;
+      // 3% 초대액 (50~200 ETH) - MEV 황금 기회!
+      return 50 + Math.random() * 150;
     }
   }
 
