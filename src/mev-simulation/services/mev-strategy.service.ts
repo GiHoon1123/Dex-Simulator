@@ -203,9 +203,9 @@ export class MevStrategyService {
    */
   private canExecuteFrontRun(opportunity: MEVOpportunity): boolean {
     return (
-      opportunity.estimatedProfit > 0.1 && // 최소 0.1 ETH 수익
-      opportunity.riskLevel < 8 && // 리스크 레벨 8 미만
-      opportunity.confidence > 0.6 // 신뢰도 60% 이상
+      opportunity.estimatedProfit > 0.001 && // 최소 0.001 ETH 수익 (시뮬레이션에 맞게 조정)
+      opportunity.riskLevel < 10 && // 리스크 레벨 10 미만
+      opportunity.confidence > 0.3 // 신뢰도 30% 이상
     );
   }
 
@@ -213,9 +213,9 @@ export class MevStrategyService {
    * Front-run 전략 수익 계산
    */
   private calculateFrontRunProfit(opportunity: MEVOpportunity): number {
-    // 기본 수익 계산 로직
-    const baseProfit = opportunity.estimatedProfit * 0.8; // 80% 확률로 수익
-    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.2; // 리스크 조정
+    // 시뮬레이션 환경에서는 더 낙관적인 수익 계산
+    const baseProfit = opportunity.estimatedProfit * 0.95; // 95% 확률로 수익
+    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.05; // 리스크 영향 최소화
     return baseProfit * riskAdjustment;
   }
 
@@ -276,7 +276,7 @@ export class MevStrategyService {
    * Front-run 전략 가스비 추정
    */
   private estimateFrontRunGasCost(opportunity: MEVOpportunity): number {
-    return 0.02; // 0.02 ETH
+    return 0.003; // 0.003 ETH (detector와 동일하게 조정)
   }
 
   /**
@@ -284,9 +284,9 @@ export class MevStrategyService {
    */
   private canExecuteBackRun(opportunity: MEVOpportunity): boolean {
     return (
-      opportunity.estimatedProfit > 0.05 && // 최소 0.05 ETH 수익
-      opportunity.riskLevel < 6 && // 리스크 레벨 6 미만
-      opportunity.confidence > 0.5 // 신뢰도 50% 이상
+      opportunity.estimatedProfit > 0.001 && // 최소 0.001 ETH 수익 (시뮬레이션에 맞게 조정)
+      opportunity.riskLevel < 10 && // 리스크 레벨 10 미만
+      opportunity.confidence > 0.3 // 신뢰도 30% 이상
     );
   }
 
@@ -294,8 +294,8 @@ export class MevStrategyService {
    * Back-run 전략 수익 계산
    */
   private calculateBackRunProfit(opportunity: MEVOpportunity): number {
-    const baseProfit = opportunity.estimatedProfit * 0.6; // 60% 확률로 수익
-    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.1; // 리스크 조정
+    const baseProfit = opportunity.estimatedProfit * 0.95; // 95% 확률로 수익
+    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.05; // 리스크 영향 최소화
     return baseProfit * riskAdjustment;
   }
 
@@ -335,7 +335,7 @@ export class MevStrategyService {
    * Back-run 전략 가스비 추정
    */
   private estimateBackRunGasCost(opportunity: MEVOpportunity): number {
-    return 0.01; // 0.01 ETH
+    return 0.002; // 0.002 ETH (detector와 동일하게 조정)
   }
 
   /**
@@ -343,9 +343,9 @@ export class MevStrategyService {
    */
   private canExecuteSandwich(opportunity: MEVOpportunity): boolean {
     return (
-      opportunity.estimatedProfit > 0.2 && // 최소 0.2 ETH 수익
-      opportunity.riskLevel < 7 && // 리스크 레벨 7 미만
-      opportunity.confidence > 0.7 // 신뢰도 70% 이상
+      opportunity.estimatedProfit > 0.001 && // 최소 0.001 ETH 수익 (시뮬레이션에 맞게 조정)
+      opportunity.riskLevel < 10 && // 리스크 레벨 10 미만
+      opportunity.confidence > 0.3 // 신뢰도 30% 이상
     );
   }
 
@@ -353,8 +353,8 @@ export class MevStrategyService {
    * Sandwich 전략 수익 계산
    */
   private calculateSandwichProfit(opportunity: MEVOpportunity): number {
-    const baseProfit = opportunity.estimatedProfit * 0.9; // 90% 확률로 수익
-    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.3; // 리스크 조정
+    const baseProfit = opportunity.estimatedProfit * 0.95; // 95% 확률로 수익
+    const riskAdjustment = 1 - (opportunity.riskLevel / 10) * 0.05; // 리스크 영향 최소화
     return baseProfit * riskAdjustment;
   }
 
@@ -413,7 +413,7 @@ export class MevStrategyService {
    * Sandwich 전략 가스비 추정
    */
   private estimateSandwichGasCost(opportunity: MEVOpportunity): number {
-    return 0.05; // 0.05 ETH
+    return 0.005; // 0.005 ETH (detector와 동일하게 조정)
   }
 
   /**
