@@ -5,17 +5,17 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MevDetectorService } from './mev-detector.service';
-import { MevStrategyService } from './mev-strategy.service';
 import {
   MEVBotConfig,
-  MEVBotStatus,
   MEVBotState,
-  MEVStats,
+  MEVBotStatus,
   MEVOpportunity,
   MEVOpportunityStatus,
+  MEVStats,
 } from '../types/mev.interface';
 import { StrategyExecutionResult } from '../types/strategy.interface';
+import { MevDetectorService } from './mev-detector.service';
+import { MevStrategyService } from './mev-strategy.service';
 
 @Injectable()
 export class MevBotService {
@@ -30,6 +30,9 @@ export class MevBotService {
     private readonly mevStrategy: MevStrategyService,
     private readonly eventEmitter: EventEmitter2,
   ) {
+    this.logger.log('[DEBUG] MevBotService 생성자 호출됨');
+    this.logger.log(`[DEBUG] mevDetector 주입됨: ${!!this.mevDetector}`);
+    this.logger.log(`[DEBUG] mevStrategy 주입됨: ${!!this.mevStrategy}`);
     this.initializeBot();
   }
 
@@ -102,7 +105,13 @@ export class MevBotService {
       this.botState.lastActivity = new Date();
 
       // MEV 감지 시작
+      this.logger.log('[DEBUG] MevDetectorService.startDetection 호출 시작');
+      this.logger.log(`[DEBUG] mevDetector 객체: ${this.mevDetector}`);
+      this.logger.log(
+        `[DEBUG] config: ${JSON.stringify(this.botState.config)}`,
+      );
       this.mevDetector.startDetection(this.botState.config);
+      this.logger.log('[DEBUG] MevDetectorService.startDetection 호출 완료');
 
       // 기회 처리 시작
       this.startOpportunityProcessing();
@@ -111,7 +120,9 @@ export class MevBotService {
       this.registerEventListeners();
 
       this.logger.log('MEV 봇이 시작되었습니다');
-      this.eventEmitter.emit('mev.bot.started', { config: this.botState.config });
+      this.eventEmitter.emit('mev.bot.started', {
+        config: this.botState.config,
+      });
     } catch (error) {
       this.logger.error('MEV 봇 시작 중 오류 발생:', error);
       this.botState.status = MEVBotStatus.ERROR;
@@ -219,7 +230,11 @@ export class MevBotService {
         // 새로운 기회 확인
         const newOpportunities = this.mevDetector.getOpportunities();
         for (const opportunity of newOpportunities) {
-          if (!this.botState.activeOpportunities.find(o => o.id === opportunity.id)) {
+          if (
+            !this.botState.activeOpportunities.find(
+              (o) => o.id === opportunity.id,
+            )
+          ) {
             this.addOpportunityToQueue(opportunity);
           }
         }
@@ -231,10 +246,10 @@ export class MevBotService {
         }
 
         // 1초 대기
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (error) {
         this.logger.error('기회 처리 중 오류 발생:', error);
-        await new Promise(resolve => setTimeout(resolve, 5000)); // 5초 대기 후 재시도
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // 5초 대기 후 재시도
       }
     }
   }
@@ -249,7 +264,10 @@ export class MevBotService {
     }
 
     // 최대 기회 수 확인
-    if (this.botState.activeOpportunities.length >= this.botState.config.maxOpportunities) {
+    if (
+      this.botState.activeOpportunities.length >=
+      this.botState.config.maxOpportunities
+    ) {
       this.logger.warn('최대 기회 수에 도달했습니다');
       return;
     }
@@ -283,7 +301,9 @@ export class MevBotService {
     }
 
     // 활성화된 전략 확인
-    if (!this.botState.config.enabledStrategies.includes(opportunity.strategy)) {
+    if (
+      !this.botState.config.enabledStrategies.includes(opportunity.strategy)
+    ) {
       return false;
     }
 
@@ -295,7 +315,9 @@ export class MevBotService {
    */
   private async executeOpportunity(opportunity: MEVOpportunity): Promise<void> {
     try {
-      this.logger.log(`기회 실행 시작: ${opportunity.id} (${opportunity.strategy})`);
+      this.logger.log(
+        `기회 실행 시작: ${opportunity.id} (${opportunity.strategy})`,
+      );
 
       // 기회 상태 업데이트
       opportunity.status = MEVOpportunityStatus.EXECUTING;
@@ -307,20 +329,23 @@ export class MevBotService {
       await this.processExecutionResult(opportunity, result);
 
       // 기회 상태 업데이트
-      opportunity.status = result.success 
-        ? MEVOpportunityStatus.COMPLETED 
+      opportunity.status = result.success
+        ? MEVOpportunityStatus.COMPLETED
         : MEVOpportunityStatus.FAILED;
 
-      this.logger.log(`기회 실행 완료: ${opportunity.id} - 성공: ${result.success}, 수익: ${result.netProfit.toFixed(4)} ETH`);
+      this.logger.log(
+        `기회 실행 완료: ${opportunity.id} - 성공: ${result.success}, 수익: ${result.netProfit.toFixed(4)} ETH`,
+      );
     } catch (error) {
       this.logger.error(`기회 실행 중 오류 발생 (${opportunity.id}):`, error);
       opportunity.status = MEVOpportunityStatus.FAILED;
       opportunity.errorMessage = error.message;
     } finally {
       // 활성 기회 목록에서 제거
-      this.botState.activeOpportunities = this.botState.activeOpportunities.filter(
-        o => o.id !== opportunity.id
-      );
+      this.botState.activeOpportunities =
+        this.botState.activeOpportunities.filter(
+          (o) => o.id !== opportunity.id,
+        );
     }
   }
 
@@ -347,51 +372,63 @@ export class MevBotService {
   /**
    * 통계 업데이트
    */
-  private updateStats(opportunity: MEVOpportunity, result: StrategyExecutionResult): void {
+  private updateStats(
+    opportunity: MEVOpportunity,
+    result: StrategyExecutionResult,
+  ): void {
     this.stats.totalOpportunities++;
-    
+
     if (result.success) {
       this.stats.successfulAttacks++;
       this.stats.totalProfit += result.profit;
       this.stats.totalGasSpent += result.gasUsed;
       this.stats.netProfit += result.netProfit;
-      
+
       // 전략별 통계 업데이트
       const strategyStats = this.stats.strategyBreakdown[opportunity.strategy];
       strategyStats.count++;
       strategyStats.profit += result.profit;
-      strategyStats.successRate = strategyStats.count > 0 
-        ? (strategyStats.count / this.stats.totalOpportunities) * 100 
-        : 0;
+      strategyStats.successRate =
+        strategyStats.count > 0
+          ? (strategyStats.count / this.stats.totalOpportunities) * 100
+          : 0;
     } else {
       this.stats.failedAttacks++;
     }
 
     // 전체 통계 업데이트
-    this.stats.averageProfit = this.stats.totalOpportunities > 0 
-      ? this.stats.totalProfit / this.stats.totalOpportunities 
-      : 0;
-    this.stats.successRate = this.stats.totalOpportunities > 0 
-      ? (this.stats.successfulAttacks / this.stats.totalOpportunities) * 100 
-      : 0;
+    this.stats.averageProfit =
+      this.stats.totalOpportunities > 0
+        ? this.stats.totalProfit / this.stats.totalOpportunities
+        : 0;
+    this.stats.successRate =
+      this.stats.totalOpportunities > 0
+        ? (this.stats.successfulAttacks / this.stats.totalOpportunities) * 100
+        : 0;
     this.stats.timeRange.end = new Date();
   }
 
   /**
    * 봇 상태 업데이트
    */
-  private updateBotState(opportunity: MEVOpportunity, result: StrategyExecutionResult): void {
+  private updateBotState(
+    opportunity: MEVOpportunity,
+    result: StrategyExecutionResult,
+  ): void {
     if (result.success) {
       this.botState.successfulAttacks++;
       this.botState.totalProfit += result.netProfit;
     }
 
-    this.botState.averageProfit = this.botState.totalOpportunities > 0 
-      ? this.botState.totalProfit / this.botState.totalOpportunities 
-      : 0;
-    this.botState.successRate = this.botState.totalOpportunities > 0 
-      ? (this.botState.successfulAttacks / this.botState.totalOpportunities) * 100 
-      : 0;
+    this.botState.averageProfit =
+      this.botState.totalOpportunities > 0
+        ? this.botState.totalProfit / this.botState.totalOpportunities
+        : 0;
+    this.botState.successRate =
+      this.botState.totalOpportunities > 0
+        ? (this.botState.successfulAttacks / this.botState.totalOpportunities) *
+          100
+        : 0;
     this.botState.lastActivity = new Date();
   }
 
@@ -401,14 +438,15 @@ export class MevBotService {
   private cleanupExpiredOpportunities(): void {
     const now = new Date();
     const expiredOpportunities = this.botState.activeOpportunities.filter(
-      o => o.expiresAt < now
+      (o) => o.expiresAt < now,
     );
 
     for (const opportunity of expiredOpportunities) {
       opportunity.status = MEVOpportunityStatus.EXPIRED;
-      this.botState.activeOpportunities = this.botState.activeOpportunities.filter(
-        o => o.id !== opportunity.id
-      );
+      this.botState.activeOpportunities =
+        this.botState.activeOpportunities.filter(
+          (o) => o.id !== opportunity.id,
+        );
       this.logger.log(`만료된 기회 제거: ${opportunity.id}`);
     }
   }
@@ -428,9 +466,12 @@ export class MevBotService {
    * 이벤트 리스너 등록
    */
   private registerEventListeners(): void {
-    this.eventEmitter.on('mev.opportunity.detected', (opportunity: MEVOpportunity) => {
-      this.logger.log(`새로운 MEV 기회 감지: ${opportunity.id}`);
-    });
+    this.eventEmitter.on(
+      'mev.opportunity.detected',
+      (opportunity: MEVOpportunity) => {
+        this.logger.log(`새로운 MEV 기회 감지: ${opportunity.id}`);
+      },
+    );
   }
 
   /**
@@ -460,7 +501,9 @@ export class MevBotService {
   updateConfig(config: Partial<MEVBotConfig>): void {
     this.botState.config = { ...this.botState.config, ...config };
     this.logger.log('봇 설정이 업데이트되었습니다');
-    this.eventEmitter.emit('mev.bot.config.updated', { config: this.botState.config });
+    this.eventEmitter.emit('mev.bot.config.updated', {
+      config: this.botState.config,
+    });
   }
 
   /**

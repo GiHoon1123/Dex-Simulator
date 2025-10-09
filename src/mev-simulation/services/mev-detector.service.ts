@@ -41,20 +41,23 @@ export class MevDetectorService {
     private readonly poolService: PoolService, // TODO: 구체화 시 실제 풀 정보 조회에 사용
     private readonly eventEmitter: EventEmitter2,
   ) {
-    // 기본 감지 기준 설정 (실제 MEV와 유사하게 설정)
+    // 기본 감지 기준 설정 (시뮬레이션에 맞게 조정)
     this.detectionCriteria = {
-      minTransactionValue: 1.0, // 1 ETH 이상
-      minGasPrice: 200, // 200 gwei 이상 (실제 MEV와 유사)
+      minTransactionValue: 0.1, // 0.1 ETH 이상 (시뮬레이션 트랜잭션에 맞게 조정)
+      minGasPrice: 50, // 50 gwei 이상 (시뮬레이션 트랜잭션에 맞게 조정)
       minSlippage: 0.5, // 0.5% 이상
       maxPoolImpact: 10.0, // 10% 이하
-      minProfitThreshold: 0.1, // 0.1 ETH 이상 (실제 MEV와 유사)
+      minProfitThreshold: 0.01, // 0.01 ETH 이상 (시뮬레이션에 맞게 조정)
     };
+    this.logger.log('[DEBUG] MevDetectorService 생성자 호출됨');
+    this.logger.log('[DEBUG] MevDetectorService 초기화 완료');
   }
 
   /**
    * MEV 기회 감지 시작
    */
   startDetection(config: MEVBotConfig): void {
+    this.logger.log('[DEBUG] startDetection 호출됨');
     if (this.isMonitoring) {
       this.logger.warn('MEV 감지가 이미 실행 중입니다');
       return;
@@ -62,19 +65,29 @@ export class MevDetectorService {
 
     this.isMonitoring = true;
     this.detectionCriteria = {
-      minTransactionValue: config.minProfit * 2, // 설정 기반 조정
-      minGasPrice: 200, // 200 gwei (실제 MEV와 유사)
+      minTransactionValue: Math.max(config.minProfit * 2, 0.1), // 설정 기반 조정, 최소 0.1 ETH
+      minGasPrice: 50, // 50 gwei (시뮬레이션에 맞게 조정)
       minSlippage: 0.5,
       maxPoolImpact: 10.0,
-      minProfitThreshold: Math.max(config.minProfit, 0.1), // 최소 0.1 ETH 보장 (실제 MEV와 유사)
+      minProfitThreshold: Math.max(config.minProfit, 0.01), // 최소 0.01 ETH 보장 (시뮬레이션에 맞게 조정)
     };
+
+    this.logger.log(
+      `[DEBUG] 감지 기준 설정: minTransactionValue=${this.detectionCriteria.minTransactionValue}, minGasPrice=${this.detectionCriteria.minGasPrice}, minProfitThreshold=${this.detectionCriteria.minProfitThreshold}`,
+    );
 
     // 1초마다 트랜잭션 풀 모니터링
     this.monitoringInterval = setInterval(() => {
+      this.logger.debug(
+        '[DEBUG] setInterval 콜백 실행됨 - scanPendingTransactions 호출',
+      );
       this.scanPendingTransactions();
     }, 1000);
 
     this.logger.log('MEV 기회 감지가 시작되었습니다');
+    this.logger.log(
+      `[DEBUG] monitoringInterval 설정됨: ${!!this.monitoringInterval}`,
+    );
     this.eventEmitter.emit('mev.detection.started', { config });
   }
 
@@ -102,11 +115,17 @@ export class MevDetectorService {
    */
   private async scanPendingTransactions(): Promise<void> {
     try {
+      this.logger.debug('[DEBUG] scanPendingTransactions 시작');
       const pendingTxs = this.transactionPoolService.getPendingTransactions();
+      this.logger.debug(
+        `[DEBUG] 현재 Pending 트랜잭션 수: ${pendingTxs.length}`,
+      );
 
       for (const tx of pendingTxs) {
+        this.logger.debug(`[DEBUG] 트랜잭션 ${tx.id} 분석 중...`);
         // 이미 분석한 트랜잭션은 스킵
         if (this.opportunities.has(tx.id)) {
+          this.logger.debug(`[DEBUG] 트랜잭션 ${tx.id}는 이미 분석됨. 스킵.`);
           continue;
         }
 
@@ -118,6 +137,8 @@ export class MevDetectorService {
             `MEV 기회 감지: ${opportunity.id} (${opportunity.strategy})`,
           );
           this.eventEmitter.emit('mev.opportunity.detected', opportunity);
+        } else {
+          this.logger.debug(`[DEBUG] 트랜잭션 ${tx.id}에서 MEV 기회 없음`);
         }
       }
     } catch (error) {
@@ -132,20 +153,35 @@ export class MevDetectorService {
     transaction: Transaction,
   ): Promise<MEVOpportunity | null> {
     try {
+      this.logger.debug(`[DEBUG] detectOpportunity 시작: ${transaction.id}`);
+
       // 트랜잭션 타입이 SWAP이 아니면 스킵
       if (transaction.type !== TransactionType.SWAP) {
+        this.logger.debug(
+          `[DEBUG] 트랜잭션 ${transaction.id}는 SWAP이 아님: ${transaction.type}`,
+        );
         return null;
       }
 
       // 파싱된 데이터 확인
       if (!transaction.parsedData) {
+        this.logger.debug(
+          `[DEBUG] 트랜잭션 ${transaction.id}에 parsedData 없음`,
+        );
         return null;
       }
 
       // 기본 조건 확인
       if (!this.meetsBasicCriteria(transaction)) {
+        this.logger.debug(
+          `[DEBUG] 트랜잭션 ${transaction.id}가 기본 기준을 만족하지 못함`,
+        );
         return null;
       }
+
+      this.logger.debug(
+        `[DEBUG] 트랜잭션 ${transaction.id} 기본 기준 통과, 기회 분석 시작`,
+      );
 
       // 풀 정보 가져오기 (임시로 기본값 사용)
       // TODO: 구체화 시 this.poolService.getPoolInfo(transaction.to) 사용
@@ -204,16 +240,36 @@ export class MevDetectorService {
     const txValue = transaction.parsedData?.params?.amountSpecified
       ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
       : parseFloat(transaction.value) / 1e18;
+
+    this.logger.debug(
+      `[DEBUG] 트랜잭션 ${transaction.id} 가치: ${txValue.toFixed(4)} ETH (기준: ${this.detectionCriteria.minTransactionValue} ETH)`,
+    );
+
     if (txValue < this.detectionCriteria.minTransactionValue) {
+      this.logger.debug(
+        `[DEBUG] 트랜잭션 ${transaction.id} 가치 부족: ${txValue.toFixed(4)} < ${this.detectionCriteria.minTransactionValue}`,
+      );
       return false;
     }
 
-    // 가스 가격 확인 (gwei 단위)
-    const gasPriceGwei = transaction.gasPrice / 1e9;
+    // 가스 가격 확인 (gwei 단위) - 디버깅 로그 추가
+    this.logger.debug(
+      `[DEBUG] 트랜잭션 ${transaction.id} 원본 gasPrice: ${transaction.gasPrice}`,
+    );
+    // transaction.gasPrice는 이미 gwei 단위이므로 변환 불필요
+    const gasPriceGwei = transaction.gasPrice;
+    this.logger.debug(
+      `[DEBUG] 트랜잭션 ${transaction.id} 가스 가격: ${gasPriceGwei.toFixed(0)} gwei (기준: ${this.detectionCriteria.minGasPrice} gwei)`,
+    );
+
     if (gasPriceGwei < this.detectionCriteria.minGasPrice) {
+      this.logger.debug(
+        `[DEBUG] 트랜잭션 ${transaction.id} 가스 가격 부족: ${gasPriceGwei.toFixed(0)} < ${this.detectionCriteria.minGasPrice}`,
+      );
       return false;
     }
 
+    this.logger.debug(`[DEBUG] 트랜잭션 ${transaction.id} 기본 기준 통과`);
     return true;
   }
 
