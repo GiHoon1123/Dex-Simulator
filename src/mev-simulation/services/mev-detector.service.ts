@@ -47,7 +47,7 @@ export class MevDetectorService {
       minGasPrice: 50, // 50 gwei 이상 (시뮬레이션 트랜잭션에 맞게 조정)
       minSlippage: 0.5, // 0.5% 이상
       maxPoolImpact: 10.0, // 10% 이하
-      minProfitThreshold: 0.01, // 0.01 ETH 이상 (시뮬레이션에 맞게 조정)
+      minProfitThreshold: 0.001, // 0.001 ETH 이상 (시뮬레이션에 맞게 조정)
     };
     this.logger.log('[DEBUG] MevDetectorService 생성자 호출됨');
     this.logger.log('[DEBUG] MevDetectorService 초기화 완료');
@@ -307,6 +307,9 @@ export class MevDetectorService {
         transaction,
         poolInfo,
       );
+      this.logger.debug(
+        `[DEBUG] Front-run 분석 결과: ${frontRunAnalysis ? `수익=${frontRunAnalysis.netProfit.toFixed(4)} ETH` : 'null'}`,
+      );
       if (frontRunAnalysis) {
         strategyAnalysis.push(frontRunAnalysis);
       }
@@ -315,6 +318,9 @@ export class MevDetectorService {
       const backRunAnalysis = this.analyzeBackRunStrategy(
         transaction,
         poolInfo,
+      );
+      this.logger.debug(
+        `[DEBUG] Back-run 분석 결과: ${backRunAnalysis ? `수익=${backRunAnalysis.netProfit.toFixed(4)} ETH` : 'null'}`,
       );
       if (backRunAnalysis) {
         strategyAnalysis.push(backRunAnalysis);
@@ -325,13 +331,24 @@ export class MevDetectorService {
         transaction,
         poolInfo,
       );
+      this.logger.debug(
+        `[DEBUG] Sandwich 분석 결과: ${sandwichAnalysis ? `수익=${sandwichAnalysis.netProfit.toFixed(4)} ETH` : 'null'}`,
+      );
       if (sandwichAnalysis) {
         strategyAnalysis.push(sandwichAnalysis);
       }
 
+      this.logger.debug(
+        `[DEBUG] 총 전략 분석 개수: ${strategyAnalysis.length}, minProfitThreshold: ${this.detectionCriteria.minProfitThreshold}`,
+      );
+
       // 권장 액션 결정
       const recommendedAction =
         this.determineRecommendedAction(strategyAnalysis);
+
+      this.logger.debug(
+        `[DEBUG] 권장 액션: ${recommendedAction.action}, 이유: ${recommendedAction.reason}`,
+      );
 
       return {
         detection,
@@ -437,9 +454,13 @@ export class MevDetectorService {
     const txValue = transaction.parsedData?.params?.amountSpecified
       ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
       : parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.02; // 2% 수익 가정 (실제 MEV와 유사)
-    const gasCost = 0.01; // 0.01 ETH 가스비 가정 (실제 MEV와 유사)
+    const expectedProfit = txValue * 0.02; // 2% 수익 가정
+    const gasCost = 0.003; // 0.003 ETH 가스비 가정 (시뮬레이션에 맞게 조정)
     const netProfit = expectedProfit - gasCost;
+
+    this.logger.debug(
+      `[DEBUG] Front-run: txValue=${txValue.toFixed(4)}, expectedProfit=${expectedProfit.toFixed(4)}, gasCost=${gasCost}, netProfit=${netProfit.toFixed(4)}, threshold=${this.detectionCriteria.minProfitThreshold}`,
+    );
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
       return null;
@@ -469,9 +490,13 @@ export class MevDetectorService {
     const txValue = transaction.parsedData?.params?.amountSpecified
       ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
       : parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.015; // 1.5% 수익 가정 (실제 MEV와 유사)
-    const gasCost = 0.008; // 0.008 ETH 가스비 가정 (실제 MEV와 유사)
+    const expectedProfit = txValue * 0.015; // 1.5% 수익 가정
+    const gasCost = 0.002; // 0.002 ETH 가스비 가정 (시뮬레이션에 맞게 조정)
     const netProfit = expectedProfit - gasCost;
+
+    this.logger.debug(
+      `[DEBUG] Back-run: txValue=${txValue.toFixed(4)}, expectedProfit=${expectedProfit.toFixed(4)}, gasCost=${gasCost}, netProfit=${netProfit.toFixed(4)}, threshold=${this.detectionCriteria.minProfitThreshold}`,
+    );
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
       return null;
@@ -501,9 +526,13 @@ export class MevDetectorService {
     const txValue = transaction.parsedData?.params?.amountSpecified
       ? parseFloat(transaction.parsedData.params.amountSpecified) / 1e18
       : parseFloat(transaction.value) / 1e18;
-    const expectedProfit = txValue * 0.03; // 3% 수익 가정 (실제 MEV와 유사)
-    const gasCost = 0.02; // 0.02 ETH 가스비 가정 (실제 MEV와 유사)
+    const expectedProfit = txValue * 0.03; // 3% 수익 가정
+    const gasCost = 0.005; // 0.005 ETH 가스비 가정 (시뮬레이션에 맞게 조정)
     const netProfit = expectedProfit - gasCost;
+
+    this.logger.debug(
+      `[DEBUG] Sandwich: txValue=${txValue.toFixed(4)}, expectedProfit=${expectedProfit.toFixed(4)}, gasCost=${gasCost}, netProfit=${netProfit.toFixed(4)}, threshold=${this.detectionCriteria.minProfitThreshold}`,
+    );
 
     if (netProfit < this.detectionCriteria.minProfitThreshold) {
       return null;

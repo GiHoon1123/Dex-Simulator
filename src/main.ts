@@ -74,5 +74,41 @@ async function bootstrap() {
   console.log(`  - DEX Simulation:  http://localhost:3000/api/dex`);
   console.log(`  - Blockchain:      http://localhost:3000/api/blockchain`);
   console.log(`  - MEV Simulation:  http://localhost:3000/api/mev`);
+
+  // 개발 환경에서 자동 시작
+  if (process.env.NODE_ENV !== 'production') {
+    const { BlockService } = await import('./shared/blockchain/block.service');
+    const { TransactionGeneratorService } = await import(
+      './shared/blockchain/transaction-generator.service'
+    );
+    const { MevBotService } = await import(
+      './mev-simulation/services/mev-bot.service'
+    );
+
+    const blockService = app.get(BlockService);
+    const txGeneratorService = app.get(TransactionGeneratorService);
+    const mevBotService = app.get(MevBotService);
+
+    // 자동 블록 생성 시작
+    blockService.startAutoProduction();
+    console.log('\n🔄 자동 블록 생성 시작됨');
+
+    // 트랜잭션 자동 생성 시작
+    txGeneratorService.startGenerating();
+    console.log('🔄 트랜잭션 자동 생성 시작됨');
+
+    // MEV 봇 시작
+    const mevConfig = {
+      minProfit: 0.01,
+      maxRisk: 0.8,
+      gasPriceMultiplier: 1.5,
+      maxOpportunities: 10,
+      opportunityTimeout: 30000,
+      minConfidence: 0.7,
+      enabledStrategies: ['FRONT_RUN', 'BACK_RUN', 'SANDWICH'],
+    };
+    mevBotService.startBot(mevConfig as any);
+    console.log('🤖 MEV 봇 시작됨\n');
+  }
 }
 bootstrap();

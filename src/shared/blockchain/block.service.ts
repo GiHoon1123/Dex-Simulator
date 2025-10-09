@@ -468,6 +468,12 @@ export class BlockService {
     transaction.error = undefined;
     transaction.result = undefined;
 
+    // 논스를 현재 논스로 업데이트 (재제출을 위해)
+    const currentNonce = this.transactionPoolService.getCurrentNonce(
+      transaction.from,
+    );
+    transaction.nonce = currentNonce;
+
     // 가스 한도 초과로 실패한 경우 가스 한도를 증가시킴
     if (transaction.error === '가스 한도 초과') {
       transaction.gasLimit = Math.floor(transaction.gasLimit * 1.2); // 20% 증가
@@ -480,7 +486,7 @@ export class BlockService {
     try {
       this.transactionPoolService.submitTransaction(transaction);
       console.log(
-        `[BlockService] 실패한 트랜잭션 ${transaction.id}을 풀에 다시 추가했습니다.`,
+        `[BlockService] 실패한 트랜잭션 ${transaction.id}을 풀에 다시 추가했습니다 (nonce: ${transaction.nonce}).`,
       );
     } catch (error) {
       console.error(

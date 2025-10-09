@@ -227,4 +227,14 @@ export class TransactionPoolService {
     );
     return totalGasPrice / transactions.length;
   }
+
+  /**
+   * 특정 주소의 현재 논스 조회
+   *
+   * @param address 조회할 주소
+   * @returns 현재 논스
+   */
+  getCurrentNonce(address: string): number {
+    return this.nonces.get(address) || 0;
+  }
 }
