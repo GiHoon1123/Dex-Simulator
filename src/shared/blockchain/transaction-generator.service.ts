@@ -175,7 +175,11 @@ export class TransactionGeneratorService {
       swapParams.data,
     ]);
 
-    // 10. 트랜잭션 생성 (실제 이더리움 구조)
+    // 10. 현재 논스 가져오기
+    const currentNonce =
+      this.transactionPoolService.getCurrentNonce(userAddress);
+
+    // 11. 트랜잭션 생성 (실제 이더리움 구조)
     const transaction: Transaction = {
       id: `tx_${Date.now()}_${this.transactionCounter}`,
       type,
@@ -185,19 +189,19 @@ export class TransactionGeneratorService {
       data: functionData, // 실제 함수 호출 데이터
       gasPrice,
       gasLimit,
-      nonce: this.transactionCounter,
+      nonce: currentNonce, // TransactionPoolService에서 관리하는 논스 사용
       status: TransactionStatus.PENDING,
       timestamp: new Date(),
     };
 
-    // 11. 파싱된 데이터 생성 (MEV 봇용)
+    // 12. 파싱된 데이터 생성 (MEV 봇용)
     const parsedData =
       this.transactionParser.parseTransactionData(functionData);
     if (parsedData) {
       (transaction as any).parsedData = parsedData;
     }
 
-    // 12. 트랜잭션 풀에 제출
+    // 13. 트랜잭션 풀에 제출
     this.transactionPoolService.submitTransaction(transaction);
 
     console.log(
