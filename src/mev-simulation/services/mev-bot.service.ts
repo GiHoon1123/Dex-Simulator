@@ -358,6 +358,9 @@ export class MevBotService {
         this.botState.activeOpportunities.filter(
           (o) => o.id !== opportunity.id,
         );
+      
+      // MevDetectorService의 opportunities Map에서도 제거 (메모리 누수 방지)
+      this.mevDetector.removeOpportunity(opportunity.id);
     }
   }
 
@@ -459,6 +462,11 @@ export class MevBotService {
         this.botState.activeOpportunities.filter(
           (o) => o.id !== opportunity.id,
         );
+      
+      // MevDetectorService의 opportunities Map에서도 제거 (메모리 누수 방지)
+      this.mevDetector.removeOpportunity(opportunity.id);
+      
+      this.logger.debug(`만료된 기회 제거: ${opportunity.id}`);
     }
   }
 
@@ -468,6 +476,8 @@ export class MevBotService {
   private cleanupActiveOpportunities(): void {
     for (const opportunity of this.botState.activeOpportunities) {
       opportunity.status = MEVOpportunityStatus.EXPIRED;
+      // MevDetectorService의 opportunities Map에서도 제거 (메모리 누수 방지)
+      this.mevDetector.removeOpportunity(opportunity.id);
     }
     this.botState.activeOpportunities = [];
     this.executionQueue = [];
