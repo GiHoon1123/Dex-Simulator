@@ -35,7 +35,12 @@ export interface RiskAssessment {
  * 리스크 요소
  */
 export interface RiskFactor {
-  type: 'GAS_PRICE' | 'SLIPPAGE' | 'LIQUIDITY' | 'MARKET_VOLATILITY' | 'COMPETITION';
+  type:
+    | 'GAS_PRICE'
+    | 'SLIPPAGE'
+    | 'LIQUIDITY'
+    | 'MARKET_VOLATILITY'
+    | 'COMPETITION';
   severity: number; // 1-10 스케일
   description: string;
   impact: number; // 예상 손실 (ETH)

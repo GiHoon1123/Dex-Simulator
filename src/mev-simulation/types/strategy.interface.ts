@@ -3,7 +3,11 @@
  * 각 MEV 전략의 구체적인 구현을 위한 타입 정의
  */
 
-import { MEVStrategyType, MEVOpportunity, TransactionData } from './mev.interface';
+import {
+  MEVStrategyType,
+  MEVOpportunity,
+  TransactionData,
+} from './mev.interface';
 
 /**
  * MEV 전략 기본 인터페이스

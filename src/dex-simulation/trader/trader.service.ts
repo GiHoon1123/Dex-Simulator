@@ -103,7 +103,6 @@ export class TraderService {
       poolAfter,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     this.eventEmitter.emit('trade.executed', tradeEvent);
 
     // 가격 정보 계산
@@ -184,7 +183,7 @@ export class TraderService {
   }
 
   // 아비트라지 기회 이벤트 수신
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
   @OnEvent('arbitrage.opportunity')
   handleArbitrageOpportunity(event: ArbitrageOpportunity): void {
     console.log(`아비트라지 기회 감지: ${event.percentage.toFixed(2)}% 차이`);
@@ -276,7 +275,6 @@ export class TraderService {
       poolAfter,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     this.eventEmitter.emit('trade.executed', tradeEvent);
 
     // 가격 정보 계산
@@ -322,9 +320,9 @@ export class TraderService {
 
     // 실제 시장 가격에서 아비트라지 기회 체크
     const poolEthPrice = currentPool.btc / currentPool.eth; // 풀 내부: 1 ETH = ? BTC
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
     const marketPrice = this.marketService.getCurrentPrice();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     const marketEthPrice = marketPrice.btc / marketPrice.eth; // 시장: 1 ETH = ? BTC
 
     const difference = Math.abs(poolEthPrice - marketEthPrice);

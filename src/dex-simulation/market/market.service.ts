@@ -154,7 +154,7 @@ export class MarketService {
       console.log(
         `아비트라지 기회 발견: ${opportunity.percentage.toFixed(2)}% 차이`,
       );
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       this.eventEmitter.emit('arbitrage.opportunity', opportunity);
     }
   }

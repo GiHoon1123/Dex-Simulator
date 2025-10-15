@@ -230,7 +230,7 @@ export class LpService {
   }
 
   // 거래 이벤트 리스너
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
   @OnEvent('trade.executed')
   handleTradeExecuted(event: TradeExecutedEvent): void {
     console.log(`거래 실행됨: ${event.tradeId}, 수수료: ${event.fee}`);
@@ -328,7 +328,7 @@ export class LpService {
   }
 
   // Market 가격 변동 이벤트 수신
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
   @OnEvent('market.price.changed')
   handleMarketPriceChange(event: PriceChangeEvent): void {
     console.log(
