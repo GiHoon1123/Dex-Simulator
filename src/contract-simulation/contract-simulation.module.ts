@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ContractSimulationController } from './controllers/contract-simulation.controller';
+import { RouterContractService } from './services/router-contract.service';
 import { SingletonContractService } from './services/singleton-contract.service';
 
 /**
@@ -12,7 +13,7 @@ import { SingletonContractService } from './services/singleton-contract.service'
 @Module({
   imports: [],
   controllers: [ContractSimulationController],
-  providers: [SingletonContractService],
-  exports: [SingletonContractService],
+  providers: [SingletonContractService, RouterContractService],
+  exports: [SingletonContractService, RouterContractService],
 })
 export class ContractSimulationModule {}
