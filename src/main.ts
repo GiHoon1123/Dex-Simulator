@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ContractSimulationModule } from './contract-simulation/contract-simulation.module';
 import { DexSimulationModule } from './dex-simulation/dex-simulation.module';
 import { MevSimulationModule } from './mev-simulation/mev-simulation.module';
 import { BlockchainModule } from './shared/blockchain/blockchain.module';
@@ -56,7 +57,27 @@ async function bootstrap() {
   );
   SwaggerModule.setup('api/blockchain', app, documentBlockchain);
 
-  // 4. MEV Simulation API 문서
+  // 4. Contract Simulation API 문서
+  const configContract = new DocumentBuilder()
+    .setTitle('Contract Simulation APIs')
+    .setDescription(
+      '컨트랙트 시뮬레이션 API - 싱글톤 컨트랙트 (Uniswap V4), 라우터 컨트랙트 (멀티홉)',
+    )
+    .setVersion('1.0')
+    .addTag('Singleton Contract - Pool Management')
+    .addTag('Singleton Contract - Swap')
+    .addTag('Singleton Contract - Analysis')
+    .addTag('Singleton Contract - Utility')
+    .addTag('Router Contract - Auto Swap')
+    .addTag('Router Contract - Route Comparison')
+    .addTag('Router Contract - Route Search')
+    .build();
+  const documentContract = SwaggerModule.createDocument(app, configContract, {
+    include: [ContractSimulationModule],
+  });
+  SwaggerModule.setup('api/contract', app, documentContract);
+
+  // 5. MEV Simulation API 문서
   const configMev = new DocumentBuilder()
     .setTitle('MEV Simulation APIs')
     .setDescription('MEV 공격 시뮬레이션 API - Frontrun, Backrun, Sandwich')
@@ -71,10 +92,11 @@ async function bootstrap() {
   await app.listen(3000);
   console.log(`Application is running on: http://localhost:3000`);
   console.log(`Swagger:`);
-  console.log(`  - All APIs:        http://localhost:3000/api`);
-  console.log(`  - DEX Simulation:  http://localhost:3000/api/dex`);
-  console.log(`  - Blockchain:      http://localhost:3000/api/blockchain`);
-  console.log(`  - MEV Simulation:  http://localhost:3000/api/mev`);
+  console.log(`  - All APIs:            http://localhost:3000/api`);
+  console.log(`  - DEX Simulation:      http://localhost:3000/api/dex`);
+  console.log(`  - Blockchain:          http://localhost:3000/api/blockchain`);
+  console.log(`  - Contract Simulation: http://localhost:3000/api/contract`);
+  console.log(`  - MEV Simulation:      http://localhost:3000/api/mev`);
 
   // 개발 환경에서 자동 시작
   if (process.env.NODE_ENV !== 'production') {
